@@ -1,0 +1,15 @@
+name: 'Slack Release Notification'
+description: 'Send notifications to Slack for release pull requests.'
+inputs:
+  slack-bot-token:
+    description: 'Slack bot token'
+    required: true
+  slack-channel:
+    description: 'Slack channel ID'
+    required: true
+  github-token:
+    description: 'GitHub token'
+    required: true
+runs:
+  using: 'node16'
+  main: 'dist/main.js'

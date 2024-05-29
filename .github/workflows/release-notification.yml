@@ -1,0 +1,27 @@
+name: Release Notification on PR Opened
+
+on:
+  pull_request:
+    types: [opened, reopened]
+    branches:
+      - 'release-*'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the project
+        run: npm run build
+
+      - name: Send Slack notification
+        uses: ./
+        with:
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack-channel: 'C0759V2S70A'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
