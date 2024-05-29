@@ -2,16 +2,14 @@ name: Release Notification on PR Opened
 
 on:
   pull_request:
-    types: [opened, reopened]
-    branches:
-      - 'release-*'
+    types: [opened, synchronize]
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install dependencies
         run: npm install
