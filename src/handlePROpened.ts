@@ -14,22 +14,35 @@ interface Commit {
     } | null;
 }
 
-export async function handlePROpened(slackToken: string, slackChannel: string, githubToken: string, githubToSlackMap?: Record<string, string>) {
+export async function handlePROpened(
+    slackToken: string, 
+    slackChannel: string, 
+    githubToken: string, 
+    initialMessageTemplate: string, 
+    githubToSlackMap?: Record<string, string>
+) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
     }
 
-    const prTitle = pr.title;
-    const prUrl = pr.html_url;
-    const branchName = pr.head.ref;
-    const targetBranch = pr.base.ref;
-    const prNumber = pr.number;
-    const prBody = pr.body || '';
+    const prTitle: string = pr.title;
+    const prUrl: string = pr.html_url || ''; // Ensure prUrl is a string
+    const branchName: string = pr.head.ref;
+    const targetBranch: string = pr.base.ref;
+    const prNumber: number = pr.number;
+    const prBody: string = pr.body || '';
+
+    const defaultInitialMessageTemplate = `New release pull request created: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}`;
+    const initialMessage = (initialMessageTemplate || defaultInitialMessageTemplate)
+        .replace('${prUrl}', prUrl)
+        .replace('${prTitle}', prTitle)
+        .replace('${branchName}', branchName)
+        .replace('${targetBranch}', targetBranch);
 
     const initialMessageResponse = await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
-        text: `New release pull request created: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}`
+        text: initialMessage
     }, {
         headers: {
             'Authorization': `Bearer ${slackToken}`,
@@ -63,14 +76,17 @@ export async function handlePROpened(slackToken: string, slackChannel: string, g
         const commitMessage = commit.commit.message;
         const commitSha = commit.sha;
         const commitUrl = `${repoUrl}/commit/${commitSha}`;
-        const githubUser = commit.author?.login;
-        const slackUser = githubToSlackMap && githubUser ? `<@${githubToSlackMap[githubUser]}>` : `@${githubUser || commit.commit.author.name}`;
-        return `- <${commitUrl}|${commitMessage}> by ${slackUser}`;
+        const githubUser = commit.author?.login || commit.commit.author.name;
+        const slackUserId = githubToSlackMap ? githubToSlackMap[githubUser] : githubUser;
+        const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
+        return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
     }).join('\n');
+
+    const updateMessage = `Commits in this pull request:\n${commitMessages}`;
 
     await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
-        text: `Commits in this pull request:\n${commitMessages}`,
+        text: updateMessage,
         thread_ts: messageTs
     }, {
         headers: {

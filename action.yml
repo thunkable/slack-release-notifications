@@ -11,9 +11,20 @@ inputs:
     description: 'GitHub token'
     required: true
   github-to-slack-map:
-    description: 'Mapping of GitHub usernames to Slack user IDs in JSON format'
+    description: 'Mapping of GitHub usernames to Slack user IDs in JSON format. Example: {"githubUsername1": "slackUserID1", "githubUsername2": "slackUserID2"}'
     required: false
-
+  initial-message-template:
+    description: 'Template for the initial message when a PR is created'
+    required: false
+    default: 'New release pull request created: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}'
+  update-message-template:
+    description: 'Template for the message when a PR is updated with new commits'
+    required: false
+    default: 'New commit added: <${commitUrl}|${commitMessage}> by @${githubUser}'
+  close-message-template:
+    description: 'Template for the message when a PR is merged'
+    required: false
+    default: 'Pull request <${prUrl}|${prTitle}> was merged by @${mergedBy}'
 runs:
   using: 'node20'
   main: 'dist/main.js'

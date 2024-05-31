@@ -6,7 +6,6 @@ on:
 
 jobs:
   slack_notification:
-    if: startsWith(github.event.pull_request.head.ref, 'release-')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,22 +21,5 @@ jobs:
         uses: ./
         with:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
-          slack-channel: 'C0761AV0960'
+          slack-channel: ${{ secrets.SLACK_CHANNEL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          github-to-slack-map: |
-            {
-              "mduchev": "U04K5DCNF18",
-              "krzysztof-kolakowski": "U03HMV3T2GH",
-              "opchaves": "U051MKEPJ8Y",
-              "ommiles": "U02CR4R48JX",
-              "duckdum": "UTRMW2371",
-              "rminhoto": "U05CT8P804T",
-              "pecabum": "U0461TZ2A2V",
-              "pmwthunkable": "U051MKEPJ8Y",
-              "JanhaviDahihande": "UJVRSE8D7",
-              "kkrogmerio": "U05N45DHX5L",
-              "TingC": "U6EMD2ZG9",
-              "andresmechali": "U05QQEPP849",
-              "Comum": "U04LY9803C1",
-              "weihuali0509": "U1BCM5ZU4"
-            }
