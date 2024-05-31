@@ -19,6 +19,7 @@ export async function handlePROpened(
     slackChannel: string, 
     githubToken: string, 
     initialMessageTemplate: string, 
+    commitListMessageTemplate: string, 
     githubToSlackMap?: Record<string, string>
 ) {
     const pr = github.context.payload.pull_request;
@@ -83,11 +84,15 @@ export async function handlePROpened(
     }).join('\n');
 
     const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
-    const updateMessage = `Commits in this pull request:\n${commitMessages}\n\n<${changelogUrl}|Full Changelog: ${branchName} to ${targetBranch}>`;
+    const commitListMessage = commitListMessageTemplate
+        .replace('${commitListMessage}', commitMessages)
+        .replace('${changelogUrl}', changelogUrl)
+        .replace('${branchName}', branchName)
+        .replace('${targetBranch}', targetBranch);
 
     await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
-        text: updateMessage,
+        text: commitListMessage,
         thread_ts: messageTs
     }, {
         headers: {
