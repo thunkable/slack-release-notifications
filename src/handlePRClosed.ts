@@ -7,13 +7,11 @@ export async function handlePRClosed(slackToken: string, slackChannel: string, g
         throw new Error('No pull request found');
     }
 
-    // Check if the PR was merged
     if (!pr.merged) {
         console.log('PR was closed but not merged.');
         return;
     }
 
-    const prNumber = pr.number;
     const prBody = pr.body;
     const messageTsMatch = prBody?.match(/Slack message_ts: (\d+\.\d+)/);
     const messageTs = messageTsMatch ? messageTsMatch[1] : null;
