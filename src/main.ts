@@ -14,7 +14,11 @@ async function run() {
         const updateMessageTemplate = core.getInput('update-message-template');
         const closeMessageTemplate = core.getInput('close-message-template');
 
-        const githubToSlackMapParsed = githubToSlackMap ? JSON.parse(githubToSlackMap) : undefined;
+        let githubToSlackMapParsed: Record<string, string> | undefined;
+
+        if (githubToSlackMap) {
+            githubToSlackMapParsed = JSON.parse(githubToSlackMap);
+        }
 
         const action = github.context.payload.action;
 
@@ -23,7 +27,7 @@ async function run() {
                 await handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, githubToSlackMapParsed);
                 break;
             case 'synchronize':
-                await handlePRUpdated(slackToken, slackChannel, githubToken, updateMessageTemplate, githubToSlackMapParsed);
+                await handlePRUpdated(slackToken, slackChannel, githubToken, updateMessageTemplate);
                 break;
             case 'closed':
                 await handlePRClosed(slackToken, slackChannel, githubToken, closeMessageTemplate);

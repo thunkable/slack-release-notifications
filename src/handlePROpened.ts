@@ -26,14 +26,16 @@ export async function handlePROpened(
         throw new Error('No pull request found');
     }
 
-    const prTitle = pr.title;
-    const prUrl = pr.html_url || ''; // Ensure prUrl is a string
-    const branchName = pr.head.ref;
-    const targetBranch = pr.base.ref;
-    const prNumber = pr.number;
-    const prBody = pr.body || '';
+    const prTitle: string = pr.title;
+    const prUrl: string = pr.html_url || ''; // Ensure prUrl is a string
+    const branchName: string = pr.head.ref;
+    const targetBranch: string = pr.base.ref;
+    const prNumber: number = pr.number;
+    const prBody: string = pr.body || '';
 
-    const initialMessage = initialMessageTemplate
+    // Default message template if none is provided
+    const defaultInitialMessageTemplate = `New release pull request created: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}`;
+    const initialMessage = (initialMessageTemplate || defaultInitialMessageTemplate)
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
         .replace('${branchName}', branchName)
