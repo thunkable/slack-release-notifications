@@ -9,22 +9,18 @@ async function run() {
         const slackToken = core.getInput('slack-bot-token');
         const slackChannel = core.getInput('slack-channel');
         const githubToken = core.getInput('github-token');
-        const githubToSlackMap = core.getInput('github-to-slack-map');
         const initialMessageTemplate = core.getInput('initial-message-template');
         const updateMessageTemplate = core.getInput('update-message-template');
         const closeMessageTemplate = core.getInput('close-message-template');
-
-        let githubToSlackMapParsed: Record<string, string> | undefined;
-
-        if (githubToSlackMap) {
-            githubToSlackMapParsed = JSON.parse(githubToSlackMap);
-        }
+        const commitListMessageTemplate = core.getInput('commit-list-message-template');
+        const githubToSlackMap = core.getInput('github-to-slack-map');
+        const githubToSlackMapParsed = githubToSlackMap ? JSON.parse(githubToSlackMap) : undefined;
 
         const action = github.context.payload.action;
 
         switch (action) {
             case 'opened':
-                await handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, githubToSlackMapParsed);
+                await handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMapParsed);
                 break;
             case 'synchronize':
                 await handlePRUpdated(slackToken, slackChannel, githubToken, updateMessageTemplate);
