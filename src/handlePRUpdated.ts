@@ -1,20 +1,7 @@
 import * as github from '@actions/github';
 import axios from 'axios';
 
-interface Commit {
-    sha: string;
-    commit: {
-        message: string;
-        author: {
-            name: string;
-        };
-    };
-    author: {
-        login: string;
-    } | null;
-}
-
-export async function handlePRUpdated(slackToken: string, slackChannel: string, githubToken: string, githubToSlackMap: { [key: string]: string }) {
+export async function handlePRUpdated(slackToken: string, slackChannel: string, githubToken: string) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -36,22 +23,17 @@ export async function handlePRUpdated(slackToken: string, slackChannel: string, 
         }
     });
 
-    const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
     const latestCommit = commitsResponse.data[commitsResponse.data.length - 1];
-    if (!latestCommit) {
-        throw new Error('No commits found');
-    }
-
     const commitMessage = latestCommit.commit.message;
     const commitSha = latestCommit.sha;
-    const commitUrl = `${repoUrl}/commit/${commitSha}`;
-    const githubUser = latestCommit.author?.login;
-    const slackUserId = githubUser ? `<@${githubToSlackMap[githubUser] || githubUser}>` : latestCommit.commit.author.name;
-    const commitMessageFormatted = `New commit added: <${commitUrl}|${commitMessage}> by ${slackUserId}`;
+    const commitUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/commit/${commitSha}`;
+    const githubUser = latestCommit.author?.login || latestCommit.commit.author.name;
+
+    const commitMessageFormatted = `<${commitUrl}|${commitMessage}> by @${githubUser}`;
 
     await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
-        text: commitMessageFormatted,
+        text: `New commit added: ${commitMessageFormatted}`,
         thread_ts: messageTs
     }, {
         headers: {

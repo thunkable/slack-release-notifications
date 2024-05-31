@@ -2,7 +2,7 @@ name: Release Notification on PR Opened
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, synchronize, closed]
 
 jobs:
   notify:
