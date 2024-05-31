@@ -21,6 +21,10 @@ async function run() {
         const slackChannel = process.env.SLACK_CHANNEL;
         const githubToken = process.env.GITHUB_TOKEN;
 
+        console.log('slackToken', slackToken)
+        console.log('slackChannel', slackChannel)
+        console.log('githubToken', githubToken)
+
         if (!slackToken || !slackChannel || !githubToken) {
             throw new Error('Missing required environment variables');
         }
