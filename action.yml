@@ -16,7 +16,7 @@ inputs:
   initial-message-template:
     description: 'Template for the initial message when a PR is created'
     required: false
-    default: 'New release pull request created: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}'
+    default: 'New release pull request created: <${prUrl}|${prTitle}>\n**From**: ${branchName} → **To**: ${targetBranch}'
   update-message-template:
     description: 'Template for the message when a PR is updated with new commits'
     required: false
