@@ -82,7 +82,8 @@ export async function handlePROpened(
         return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
     }).join('\n');
 
-    const updateMessage = `Commits in this pull request:\n${commitMessages}`;
+    const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
+    const updateMessage = `Commits in this pull request:\n${commitMessages}\n\n<${changelogUrl}|Full Changelog: ${branchName} to ${targetBranch}>`;
 
     await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
