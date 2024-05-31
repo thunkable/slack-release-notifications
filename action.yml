@@ -1,5 +1,5 @@
 name: 'Slack Release Notification'
-description: 'Send notifications to Slack for release pull requests.'
+description: 'A GitHub Action to send Slack notifications for release pull requests'
 inputs:
   slack-bot-token:
     description: 'Slack bot token'
@@ -10,6 +10,10 @@ inputs:
   github-token:
     description: 'GitHub token'
     required: true
+  github-to-slack-map:
+    description: 'Mapping of GitHub usernames to Slack user IDs in JSON format'
+    required: true
+
 runs:
-  using: 'node16'
+  using: 'node20'
   main: 'dist/main.js'
