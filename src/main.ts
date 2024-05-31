@@ -2,14 +2,15 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { handlePROpened } from './handlePROpened';
 import { handlePRUpdated } from './handlePRUpdated';
+import { handlePRClosed } from './handlePRClosed';
 
 async function run() {
     try {
         const slackToken = core.getInput('slack-bot-token');
         const slackChannel = core.getInput('slack-channel');
         const githubToken = core.getInput('github-token');
-        const githubToSlackMapInput = core.getInput('github-to-slack-map');
-        const githubToSlackMap = JSON.parse(githubToSlackMapInput);
+        const githubToSlackMapString = core.getInput('github-to-slack-map');
+        const githubToSlackMap = JSON.parse(githubToSlackMapString);
 
         const action = github.context.payload.action;
 
@@ -19,6 +20,9 @@ async function run() {
                 break;
             case 'synchronize':
                 await handlePRUpdated(slackToken, slackChannel, githubToken, githubToSlackMap);
+                break;
+            case 'closed':
+                await handlePRClosed(slackToken, slackChannel, githubToken, githubToSlackMap);
                 break;
             default:
                 throw new Error('Unsupported pull request event action');
