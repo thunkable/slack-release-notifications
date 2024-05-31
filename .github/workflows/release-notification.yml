@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, closed]
 
 jobs:
-  notify:
+  slack_notification:
     if: startsWith(github.event.pull_request.head.ref, 'release-')
     runs-on: ubuntu-latest
     steps:
