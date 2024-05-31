@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: npm install
@@ -23,3 +23,4 @@ jobs:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack-channel: 'C0761AV0960'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-to-slack-map: '{"duckdum": "UTRMW2371"}'

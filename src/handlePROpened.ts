@@ -14,7 +14,7 @@ interface Commit {
     } | null;
 }
 
-export async function handlePROpened(slackToken: string, slackChannel: string, githubToken: string) {
+export async function handlePROpened(slackToken: string, slackChannel: string, githubToken: string, githubToSlackMap: { [key: string]: string }) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -45,7 +45,7 @@ export async function handlePROpened(slackToken: string, slackChannel: string, g
 
     const newPrBody = `Slack message_ts: ${messageTs}\n\n${prBody}`;
     const octokit = github.getOctokit(githubToken);
-    await octokit.pulls.update({
+    await octokit.rest.pulls.update({
         ...github.context.repo,
         pull_number: prNumber,
         body: newPrBody
@@ -64,7 +64,7 @@ export async function handlePROpened(slackToken: string, slackChannel: string, g
         const commitSha = commit.sha;
         const commitUrl = `${repoUrl}/commit/${commitSha}`;
         const githubUser = commit.author?.login;
-        const slackUserId = githubUser ? `<@${githubUser}>` : commit.commit.author.name;
+        const slackUserId = githubUser ? `<@${githubToSlackMap[githubUser] || githubUser}>` : commit.commit.author.name;
         return `- <${commitUrl}|${commitMessage}> by ${slackUserId}`;
     }).join('\n');
 

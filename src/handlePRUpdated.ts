@@ -14,7 +14,7 @@ interface Commit {
     } | null;
 }
 
-export async function handlePRUpdated(slackToken: string, slackChannel: string, githubToken: string) {
+export async function handlePRUpdated(slackToken: string, slackChannel: string, githubToken: string, githubToSlackMap: { [key: string]: string }) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -46,7 +46,7 @@ export async function handlePRUpdated(slackToken: string, slackChannel: string, 
     const commitSha = latestCommit.sha;
     const commitUrl = `${repoUrl}/commit/${commitSha}`;
     const githubUser = latestCommit.author?.login;
-    const slackUserId = githubUser ? `<@${githubUser}>` : latestCommit.commit.author.name;
+    const slackUserId = githubUser ? `<@${githubToSlackMap[githubUser] || githubUser}>` : latestCommit.commit.author.name;
     const commitMessageFormatted = `New commit added: <${commitUrl}|${commitMessage}> by ${slackUserId}`;
 
     await axios.post('https://slack.com/api/chat.postMessage', {
