@@ -20,7 +20,7 @@ inputs:
   update-message-template:
     description: 'Template for the message when a PR is updated with new commits'
     required: false
-    default: 'Commits in this pull request:\n${commitMessages}'
+    default: 'New commit added: <${commitUrl}|${commitMessage}> by ${slackUser}'
   close-message-template:
     description: 'Template for the message when a PR is merged'
     required: false

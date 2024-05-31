@@ -14,13 +14,19 @@ interface Commit {
     } | null;
 }
 
-export async function handlePRUpdated(slackToken: string, slackChannel: string, githubToken: string, updateMessageTemplate: string, githubToSlackMap?: Record<string, string>) {
+export async function handlePRUpdated(
+    slackToken: string, 
+    slackChannel: string, 
+    githubToken: string, 
+    updateMessageTemplate: string
+) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
     }
 
-    const prBody = pr.body || '';  // Ensure prBody is a string
+    const prNumber = pr.number;
+    const prBody = pr.body || '';
     const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
     const messageTs = messageTsMatch ? messageTsMatch[1] : null;
 
@@ -39,24 +45,23 @@ export async function handlePRUpdated(slackToken: string, slackChannel: string, 
     const latestCommit = commitsResponse.data[commitsResponse.data.length - 1];
 
     if (!latestCommit) {
-        throw new Error('No new commit found');
+        throw new Error('No commits found');
     }
 
     const commitMessage = latestCommit.commit.message;
     const commitSha = latestCommit.sha;
     const commitUrl = `${repoUrl}/commit/${commitSha}`;
-    const githubUser = latestCommit.author?.login;
-    const slackUserId = githubToSlackMap ? githubToSlackMap[githubUser] : githubUser;
-    const slackUser = slackUserId ? `<@${slackUserId}>` : latestCommit.commit.author.name;
+    const githubUser = latestCommit.author?.login || latestCommit.commit.author.name;
 
-    const commitMessageFormatted = updateMessageTemplate
-        .replace('${commitMessage}', commitMessage)
+    const defaultUpdateMessageTemplate = `New commit added: <${commitUrl}|${commitMessage}> by @${githubUser}`;
+    const updateMessage = (updateMessageTemplate || defaultUpdateMessageTemplate)
         .replace('${commitUrl}', commitUrl)
-        .replace('${slackUser}', slackUser);
+        .replace('${commitMessage}', commitMessage)
+        .replace('${githubUser}', githubUser);
 
     await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
-        text: `New commit added: ${commitMessageFormatted}`,
+        text: updateMessage,
         thread_ts: messageTs
     }, {
         headers: {
