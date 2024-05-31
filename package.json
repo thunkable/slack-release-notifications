@@ -1,10 +1,11 @@
 {
   "name": "slack-release-notification",
   "version": "1.0.0",
+  "description": "A GitHub Action to send Slack notifications for release pull requests",
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/main.js"
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "@actions/core": "^1.2.6",
@@ -12,7 +13,24 @@
     "axios": "^0.21.1"
   },
   "devDependencies": {
-    "@types/node": "^20.12.13",
-    "typescript": "^4.1.3"
-  }
+    "@types/node": "^14.14.35",
+    "typescript": "^4.1.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/slack-release-notification.git"
+  },
+  "keywords": [
+    "github",
+    "action",
+    "slack",
+    "notification",
+    "release"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/slack-release-notification/issues"
+  },
+  "homepage": "https://github.com/yourusername/slack-release-notification#readme"
 }
