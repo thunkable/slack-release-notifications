@@ -38,7 +38,8 @@ export async function handlePROpened(
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
         .replace('${branchName}', branchName)
-        .replace('${targetBranch}', targetBranch);
+        .replace('${targetBranch}', targetBranch)
+        .replace('\\n', '\n'); // Replace escaped newline characters with actual newline characters
 
     const initialMessageResponse = await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
