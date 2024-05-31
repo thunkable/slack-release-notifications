@@ -24,7 +24,20 @@ export async function handlePRUpdated(slackToken: string, slackChannel: string, 
 
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
     const commit = commitsResponse.data[commitsResponse.data.length - 1];  // Get the last commit
-    const commitMessage = commit.commit.message.split('\n')[0];  // Use only the first line of the commit message
+    let commitMessage = commit.commit.message.split('\n')[0];  // Use only the first line of the commit message
+
+    // Check if the commit message is a merge commit and if so, fetch the actual commit message
+    if (commitMessage.startsWith('Merge pull request')) {
+        const commitDetailsUrl = `${repoUrl}/commit/${commit.sha}`;
+        const commitDetailsResponse = await axios.get(commitDetailsUrl, {
+            headers: {
+                'Authorization': `token ${githubToken}`
+            }
+        });
+
+        commitMessage = commitDetailsResponse.data.commit.message.split('\n')[0];  // Use the first line of the actual commit message
+    }
+
     const commitSha = commit.sha;
     const commitUrl = `${repoUrl}/commit/${commitSha}`;
     const githubUser = commit.author?.login;
