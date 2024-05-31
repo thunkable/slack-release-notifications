@@ -29,8 +29,7 @@ export async function handlePRClosed(
         throw new Error('No Slack message_ts found in pull request description');
     }
 
-    const defaultCloseMessageTemplate = `Pull request <${prUrl}|${prTitle}> was merged by @${mergedBy}`;
-    const closeMessage = (closeMessageTemplate || defaultCloseMessageTemplate)
+    const closeMessage = closeMessageTemplate
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
         .replace('${mergedBy}', mergedBy);

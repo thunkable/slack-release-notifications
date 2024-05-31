@@ -23,4 +23,4 @@ jobs:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack-channel: ${{ secrets.SLACK_CHANNEL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          
+          initial-message-template: ':traffic_light:<${prUrl}|${prTitle}>'
