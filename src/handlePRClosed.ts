@@ -1,7 +1,7 @@
 import * as github from '@actions/github';
 import axios from 'axios';
 
-export async function handlePRClosed(slackToken: string, slackChannel: string, githubToken: string, githubToSlackMap: Record<string, string>) {
+export async function handlePRClosed(slackToken: string, slackChannel: string, githubToken: string) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -13,6 +13,7 @@ export async function handlePRClosed(slackToken: string, slackChannel: string, g
         return;
     }
 
+    const prNumber = pr.number;
     const prBody = pr.body;
     const messageTsMatch = prBody?.match(/Slack message_ts: (\d+\.\d+)/);
     const messageTs = messageTsMatch ? messageTsMatch[1] : null;
@@ -24,9 +25,8 @@ export async function handlePRClosed(slackToken: string, slackChannel: string, g
     const prTitle = pr.title;
     const prUrl = pr.html_url;
     const mergedBy = pr.merged_by.login;
-    const slackUserId = githubToSlackMap[mergedBy] ? `<@${githubToSlackMap[mergedBy]}>` : mergedBy;
 
-    const message = `Pull request <${prUrl}|${prTitle}> was merged by ${slackUserId}`;
+    const message = `Pull request <${prUrl}|${prTitle}> was merged by @${mergedBy}`;
 
     await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
