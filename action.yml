@@ -16,7 +16,7 @@ inputs:
   initial-message-template:
     description: 'Template for the initial message when a PR is created'
     required: false
-    default: 'New release pull request created: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}'
+    default: ':traffic_light: <${prUrl}|${prTitle}>'
   update-message-template:
     description: 'Template for the message when a PR is updated with new commits'
     required: false

@@ -23,6 +23,5 @@ jobs:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack-channel: ${{ secrets.SLACK_CHANNEL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          initial-message-template: 'Change this: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}'
           update-message-template: ':rocket: commit: <${commitUrl}|${commitMessage}> by @${githubUser}'
           close-message-template: 'Closed message <${prUrl}|${prTitle}> was merged by @${mergedBy}'
