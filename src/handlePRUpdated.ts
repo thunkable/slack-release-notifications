@@ -22,26 +22,31 @@ export async function handlePRUpdated(slackToken: string, slackChannel: string, 
         }
     });
 
+    const commitsData = commitsResponse.data;
+    if (!commitsData || commitsData.length === 0) {
+        throw new Error('No commits found');
+    }
+
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
-    const commit = commitsResponse.data[commitsResponse.data.length - 1];  // Get the last commit
+    const commit = commitsData[commitsData.length - 1];  // Get the last commit
     let commitMessage = commit.commit.message.split('\n')[0];  // Use only the first line of the commit message
 
     // Check if the commit message is a merge commit and if so, fetch the actual commit message
     if (commitMessage.startsWith('Merge pull request')) {
-        const commitDetailsUrl = `${repoUrl}/commit/${commit.sha}`;
-        const commitDetailsResponse = await axios.get(commitDetailsUrl, {
+        const commitDetailsResponse = await axios.get(`https://api.github.com/repos/${github.context.repo.owner}/${github.context.repo.repo}/commits/${commit.sha}`, {
             headers: {
                 'Authorization': `token ${githubToken}`
             }
         });
 
-        commitMessage = commitDetailsResponse.data.commit.message.split('\n')[0];  // Use the first line of the actual commit message
+        const commitDetails = commitDetailsResponse.data;
+        commitMessage = commitDetails.commit.message.split('\n')[0];  // Use the first line of the actual commit message
     }
 
     const commitSha = commit.sha;
     const commitUrl = `${repoUrl}/commit/${commitSha}`;
-    const githubUser = commit.author?.login;
-    const slackUser = `@${githubUser || commit.commit.author.name}`;
+    const githubUser = commit.author?.login || commit.commit.author.name;
+    const slackUser = `@${githubUser}`;
 
     const commitMessageFormatted = `<${commitUrl}|${commitMessage}> by ${slackUser}`;
 
