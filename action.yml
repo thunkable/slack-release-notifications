@@ -17,6 +17,10 @@ inputs:
     description: 'Template for the initial message when a PR is created'
     required: false
     default: 'New release pull request created: <${prUrl}|${prTitle}>\n*From*: ${branchName} → *To*: ${targetBranch}'
+  commit-list-message-template:
+    description: 'Template for the message with the list of commits when a PR is created'
+    required: false
+    default: 'Commits in this pull request:\n${commitListMessage}\n\n<${changelogUrl}|Full Changelog: ${branchName} to ${targetBranch}>'
   update-message-template:
     description: 'Template for the message when a PR is updated with new commits'
     required: false
