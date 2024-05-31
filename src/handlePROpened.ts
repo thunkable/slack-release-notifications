@@ -25,7 +25,7 @@ export async function handlePROpened(slackToken: string, slackChannel: string, g
     const branchName = pr.head.ref;
     const targetBranch = pr.base.ref;
     const prNumber = pr.number;
-    const prBody = pr.body;
+    const prBody = pr.body || '';
 
     const initialMessageResponse = await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
