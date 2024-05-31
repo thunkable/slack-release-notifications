@@ -7,7 +7,6 @@ export async function handlePRUpdated(slackToken: string, slackChannel: string, 
         throw new Error('No pull request found');
     }
 
-    const prNumber = pr.number;
     const prBody = pr.body;
     const messageTsMatch = prBody?.match(/Slack message_ts: (\d+\.\d+)/);
     const messageTs = messageTsMatch ? messageTsMatch[1] : null;
