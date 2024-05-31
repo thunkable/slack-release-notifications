@@ -23,5 +23,4 @@ jobs:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack-channel: ${{ secrets.SLACK_CHANNEL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          update-message-template: ':rocket: commit: <${commitUrl}|${commitMessage}> by @${githubUser}'
-          close-message-template: 'Closed message <${prUrl}|${prTitle}> was merged by @${mergedBy}'
+          initial-message-template: ':traffic_light:<${prUrl}|${prTitle}>'

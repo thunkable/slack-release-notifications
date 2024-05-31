@@ -33,8 +33,7 @@ export async function handlePROpened(
     const prNumber: number = pr.number;
     const prBody: string = pr.body || '';
 
-    const defaultInitialMessageTemplate = `New release pull request created: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}`;
-    const initialMessage = (initialMessageTemplate || defaultInitialMessageTemplate)
+    const initialMessage = initialMessageTemplate
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
         .replace('${branchName}', branchName)
