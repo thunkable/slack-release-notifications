@@ -11,7 +11,7 @@ inputs:
     description: 'GitHub token'
     required: true
   github-to-slack-map:
-    description: 'Mapping of GitHub usernames to Slack user IDs in JSON format'
+    description: 'Mapping of GitHub usernames to Slack user IDs in JSON format. Example: {"githubUsername1": "slackUserID1", "githubUsername2": "slackUserID2"}'
     required: false
 
 runs:
