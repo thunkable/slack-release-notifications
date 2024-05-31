@@ -8,7 +8,7 @@ export async function handlePRUpdated(slackToken: string, slackChannel: string, 
     }
 
     const prBody = pr.body || '';  // Ensure prBody is a string
-    const messageTsMatch = prBody?.match(/Slack message_ts: (\d+\.\d+)/);
+    const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
     const messageTs = messageTsMatch ? messageTsMatch[1] : null;
 
     if (!messageTs) {
@@ -22,13 +22,15 @@ export async function handlePRUpdated(slackToken: string, slackChannel: string, 
         }
     });
 
-    const latestCommit = commitsResponse.data[commitsResponse.data.length - 1];
-    const commitMessage = latestCommit.commit.message;
-    const commitSha = latestCommit.sha;
-    const commitUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}/commit/${commitSha}`;
-    const githubUser = latestCommit.author?.login || latestCommit.commit.author.name;
+    const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
+    const commit = commitsResponse.data[commitsResponse.data.length - 1];  // Get the last commit
+    const commitMessage = commit.commit.message.split('\n')[0];  // Use only the first line of the commit message
+    const commitSha = commit.sha;
+    const commitUrl = `${repoUrl}/commit/${commitSha}`;
+    const githubUser = commit.author?.login;
+    const slackUser = `@${githubUser || commit.commit.author.name}`;
 
-    const commitMessageFormatted = `<${commitUrl}|${commitMessage}> by @${githubUser}`;
+    const commitMessageFormatted = `<${commitUrl}|${commitMessage}> by ${slackUser}`;
 
     await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
