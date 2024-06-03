@@ -1,19 +1,6 @@
 import * as github from '@actions/github';
 import axios from 'axios';
 
-interface Commit {
-    sha: string;
-    commit: {
-        message: string;
-        author: {
-            name: string;
-        };
-    };
-    author: {
-        login: string;
-    } | null;
-}
-
 export async function handlePRUpdated(
     slackToken: string, 
     slackChannel: string, 
