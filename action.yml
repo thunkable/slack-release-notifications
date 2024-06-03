@@ -34,5 +34,5 @@ runs:
   main: 'dist/main.js'
 branding:
   icon: 'bell'
-  color: '4A154B'
+  color: 'blue'
   label: 'Slack Release Notifications'
