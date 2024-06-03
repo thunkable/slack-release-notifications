@@ -4,7 +4,6 @@ import axios from 'axios';
 export async function handlePRClosed(
     slackToken: string, 
     slackChannel: string, 
-    githubToken: string, 
     closeMessageTemplate: string
 ) {
     const pr = github.context.payload.pull_request;

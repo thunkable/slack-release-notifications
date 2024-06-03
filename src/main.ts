@@ -26,7 +26,7 @@ async function run() {
                 await handlePRUpdated(slackToken, slackChannel, githubToken, updateMessageTemplate);
                 break;
             case 'closed':
-                await handlePRClosed(slackToken, slackChannel, githubToken, closeMessageTemplate);
+                await handlePRClosed(slackToken, slackChannel, closeMessageTemplate);
                 break;
             default:
                 throw new Error('Unsupported pull request event action');
