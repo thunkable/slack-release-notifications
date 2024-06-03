@@ -34,7 +34,6 @@ async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMess
     if (!pr) {
         throw new Error('No pull request found');
     }
-    const prNumber = pr.number;
     const prBody = pr.body || '';
     const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
     const messageTs = messageTsMatch ? messageTsMatch[1] : null;
@@ -56,8 +55,7 @@ async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMess
     const commitSha = latestCommit.sha;
     const commitUrl = `${repoUrl}/commit/${commitSha}`;
     const githubUser = latestCommit.author?.login || latestCommit.commit.author.name;
-    const defaultUpdateMessageTemplate = `New commit added: <${commitUrl}|${commitMessage}> by @${githubUser}`;
-    const updateMessage = (updateMessageTemplate || defaultUpdateMessageTemplate)
+    const updateMessage = updateMessageTemplate
         .replace('${commitUrl}', commitUrl)
         .replace('${commitMessage}', commitMessage)
         .replace('${githubUser}', githubUser);
