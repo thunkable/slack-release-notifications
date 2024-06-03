@@ -18,7 +18,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/slack-release-notification.git"
+    "url": "git+https://github.com/duckdum/slack-release-notification.git"
   },
   "keywords": [
     "github",
@@ -27,10 +27,10 @@
     "notification",
     "release"
   ],
-  "author": "Your Name",
+  "author": "Eduardo de Paula",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/yourusername/slack-release-notification/issues"
+    "url": "https://github.com/duckdum/slack-release-notification/issues"
   },
-  "homepage": "https://github.com/yourusername/slack-release-notification#readme"
+  "homepage": "https://github.com/duckdum/slack-release-notification#readme"
 }
