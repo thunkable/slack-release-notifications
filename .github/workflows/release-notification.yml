@@ -1,4 +1,4 @@
-name: Release Notification on PR Opened
+name: Release Slack Notifications
 
 on:
   pull_request:
@@ -23,5 +23,3 @@ jobs:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack-channel: ${{ secrets.SLACK_CHANNEL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          initial-message-template: ':traffic_light:<${prUrl}|${prTitle}>'
-          
