@@ -29,7 +29,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
 const axios_1 = __importDefault(require("axios"));
-async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, githubToSlackMap) {
+async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -40,12 +40,12 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
     const targetBranch = pr.base.ref;
     const prNumber = pr.number;
     const prBody = pr.body || '';
-    const defaultInitialMessageTemplate = `New release pull request created: <${prUrl}|${prTitle}>\nBranch: ${branchName} -> ${targetBranch}`;
-    const initialMessage = (initialMessageTemplate || defaultInitialMessageTemplate)
+    const initialMessage = initialMessageTemplate
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
         .replace('${branchName}', branchName)
-        .replace('${targetBranch}', targetBranch);
+        .replace('${targetBranch}', targetBranch)
+        .replace(/\\n/g, '\n');
     const initialMessageResponse = await axios_1.default.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
         text: initialMessage
@@ -82,10 +82,16 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
         return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
     }).join('\n');
-    const updateMessage = `Commits in this pull request:\n${commitMessages}`;
+    const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
+    const commitListMessage = commitListMessageTemplate
+        .replace('${commitListMessage}', commitMessages)
+        .replace('${changelogUrl}', changelogUrl)
+        .replace('${branchName}', branchName)
+        .replace('${targetBranch}', targetBranch)
+        .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
     await axios_1.default.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
-        text: updateMessage,
+        text: commitListMessage,
         thread_ts: messageTs
     }, {
         headers: {

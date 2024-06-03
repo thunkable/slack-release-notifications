@@ -29,7 +29,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePRClosed = void 0;
 const github = __importStar(require("@actions/github"));
 const axios_1 = __importDefault(require("axios"));
-async function handlePRClosed(slackToken, slackChannel, githubToken, closeMessageTemplate) {
+async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -47,8 +47,7 @@ async function handlePRClosed(slackToken, slackChannel, githubToken, closeMessag
     if (!messageTs) {
         throw new Error('No Slack message_ts found in pull request description');
     }
-    const defaultCloseMessageTemplate = `Pull request <${prUrl}|${prTitle}> was merged by @${mergedBy}`;
-    const closeMessage = (closeMessageTemplate || defaultCloseMessageTemplate)
+    const closeMessage = closeMessageTemplate
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
         .replace('${mergedBy}', mergedBy);
