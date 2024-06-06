@@ -1,0 +1,36 @@
+{
+  "name": "slack-release-notification",
+  "version": "1.0.0",
+  "description": "A GitHub Action to send Slack notifications for release pull requests",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.1",
+    "@actions/github": "^6.0.0",
+    "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.13",
+    "typescript": "^5.4.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/duckdum/slack-release-notification.git"
+  },
+  "keywords": [
+    "github",
+    "action",
+    "slack",
+    "notification",
+    "release"
+  ],
+  "author": "Eduardo de Paula",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/duckdum/slack-release-notification/issues"
+  },
+  "homepage": "https://github.com/duckdum/slack-release-notification#readme"
+}

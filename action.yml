@@ -1,0 +1,38 @@
+name: 'Slack Release Notification'
+description: 'A GitHub Action to send Slack notifications for release pull requests'
+inputs:
+  slack-bot-token:
+    description: 'Slack bot token'
+    required: true
+  slack-channel:
+    description: 'Slack channel ID'
+    required: true
+  github-token:
+    description: 'GitHub token'
+    required: true
+  github-to-slack-map:
+    description: 'Mapping of GitHub usernames to Slack user IDs in JSON format. Example: {"githubUsername1": "slackUserID1", "githubUsername2": "slackUserID2"}'
+    required: false
+  initial-message-template:
+    description: 'Template for the initial message when a PR is created'
+    required: false
+    default: 'New release pull request created: <${prUrl}|${prTitle}>\n*From*: ${branchName} → *To*: ${targetBranch}'
+  commit-list-message-template:
+    description: 'Template for the message with the list of commits when a PR is created'
+    required: false
+    default: 'Commits in this pull request:\n${commitListMessage}\n\n<${changelogUrl}|Full Changelog: ${branchName} to ${targetBranch}>'
+  update-message-template:
+    description: 'Template for the message when a PR is updated with new commits'
+    required: false
+    default: 'New commit added: <${commitUrl}|${commitMessage}> by @${githubUser}'
+  close-message-template:
+    description: 'Template for the message when a PR is merged'
+    required: false
+    default: 'Pull request <${prUrl}|${prTitle}> was merged by @${mergedBy}'
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
+branding:
+  icon: 'bell'
+  color: 'blue'
+  label: 'Slack Release Notifications'

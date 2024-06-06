@@ -1,0 +1,25 @@
+name: Release Slack Notifications
+
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+
+jobs:
+  slack_notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the project
+        run: npm run build
+
+      - name: Send Slack notification
+        uses: ./
+        with:
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          slack-channel: ${{ secrets.SLACK_CHANNEL }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
