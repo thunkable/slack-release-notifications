@@ -22,13 +22,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePRClosed = void 0;
 const github = __importStar(require("@actions/github"));
-const axios_1 = __importDefault(require("axios"));
 async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
@@ -51,15 +47,21 @@ async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
         .replace('${mergedBy}', mergedBy);
-    await axios_1.default.post('https://slack.com/api/chat.postMessage', {
-        channel: slackChannel,
-        text: closeMessage,
-        thread_ts: messageTs
-    }, {
+    const response = await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
         headers: {
-            'Authorization': `Bearer ${slackToken}`,
-            'Content-Type': 'application/json'
-        }
+            Authorization: `Bearer ${slackToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            channel: slackChannel,
+            text: closeMessage,
+            thread_ts: messageTs,
+        }),
     });
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Slack API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+    }
 }
 exports.handlePRClosed = handlePRClosed;
