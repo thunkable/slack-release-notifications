@@ -85,11 +85,10 @@ export async function handlePROpened(
 
     const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
     const commitListMessage = commitListMessageTemplate
-        .replace('${commitListMessage}', commitMessages)
-        .replace('${changelogUrl}', changelogUrl)
-        .replace('${branchName}', branchName)
-        .replace('${targetBranch}', targetBranch)
-        .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
+      .replace('${commitListMessage}', commitMessages)
+      .replace('${changelogUrl}', changelogUrl)
+      .replace('${branchName}', branchName)
+      .replace('${targetBranch}', targetBranch);
 
     await axios.post('https://slack.com/api/chat.postMessage', {
         channel: slackChannel,
