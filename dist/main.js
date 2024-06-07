@@ -25,9 +25,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const core = __importStar(require("@actions/core"));
 const github = __importStar(require("@actions/github"));
+const handlePRClosed_1 = require("./handlePRClosed");
 const handlePROpened_1 = require("./handlePROpened");
 const handlePRUpdated_1 = require("./handlePRUpdated");
-const handlePRClosed_1 = require("./handlePRClosed");
 async function run() {
     try {
         const slackToken = core.getInput('slack-bot-token');
@@ -36,13 +36,14 @@ async function run() {
         const initialMessageTemplate = core.getInput('initial-message-template');
         const updateMessageTemplate = core.getInput('update-message-template');
         const closeMessageTemplate = core.getInput('close-message-template');
-        const commitListMessageTemplate = core.getInput('commit-list-message-template');
         const githubToSlackMap = core.getInput('github-to-slack-map');
-        const githubToSlackMapParsed = githubToSlackMap ? JSON.parse(githubToSlackMap) : undefined;
+        const githubToSlackMapParsed = githubToSlackMap
+            ? JSON.parse(githubToSlackMap)
+            : undefined;
         const action = github.context.payload.action;
         switch (action) {
             case 'opened':
-                await (0, handlePROpened_1.handlePROpened)(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMapParsed);
+                await (0, handlePROpened_1.handlePROpened)(slackToken, slackChannel, githubToken, initialMessageTemplate, githubToSlackMapParsed);
                 break;
             case 'synchronize':
                 await (0, handlePRUpdated_1.handlePRUpdated)(slackToken, slackChannel, githubToken, updateMessageTemplate);
