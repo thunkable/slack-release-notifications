@@ -80,7 +80,7 @@ describe('handlePROpened', () => {
       githubToken,
       initialMessageTemplate,
       commitListMessageTemplate,
-      githubToSlackMap
+      JSON.stringify(githubToSlackMap)
     );
 
     expect(global.fetch).toHaveBeenCalledWith(
@@ -135,7 +135,7 @@ describe('handlePROpened', () => {
         githubToken,
         initialMessageTemplate,
         commitListMessageTemplate,
-        githubToSlackMap
+        JSON.stringify(githubToSlackMap)
       )
     ).rejects.toThrow('No pull request found');
   });
@@ -155,7 +155,7 @@ describe('handlePROpened', () => {
         githubToken,
         initialMessageTemplate,
         commitListMessageTemplate,
-        githubToSlackMap
+        JSON.stringify(githubToSlackMap)
       )
     ).rejects.toThrow('Failed to send initial Slack message');
   });

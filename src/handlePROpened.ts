@@ -19,8 +19,11 @@ export async function handlePROpened(
   githubToken: string,
   initialMessageTemplate: string,
   commitListMessageTemplate: string,
-  githubToSlackMap?: Record<string, string>
+  githubToSlackMapJSON?: string
 ) {
+  const githubToSlackMap = githubToSlackMapJSON
+    ? JSON.parse(githubToSlackMapJSON)
+    : {};
   const pr = github.context.payload.pull_request;
   if (!pr) {
     throw new Error('No pull request found');
