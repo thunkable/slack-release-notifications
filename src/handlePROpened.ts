@@ -1,3 +1,4 @@
+import * as core from '@actions/core'; // Add this import
 import * as github from '@actions/github';
 
 interface Commit {
@@ -43,6 +44,8 @@ export async function handlePROpened(
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n');
 
+  core.info(`Initial Slack message: ${initialMessage}`);
+
   const initialMessageResponse = await fetch(
     'https://slack.com/api/chat.postMessage',
     {
@@ -83,26 +86,36 @@ export async function handlePROpened(
 
   const commitsData = await commitsResponse.json();
 
+  core.info(`Commits data: ${JSON.stringify(commitsData)}`);
+
   const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
   const commitMessages = commitsData
     .map((commit: Commit) => {
       const commitMessage = commit.commit.message.split('\n')[0]; // Extract only the first line
       const commitSha = commit.sha;
-      const commitUrl = `${repoUrl}/commit/${commitSha}`;
+      const commitUrl = encodeURI(`${repoUrl}/commit/${commitSha}`); // Ensure URL is properly encoded
       const githubUser = commit.author?.login || commit.commit.author.name;
       const slackUserId = githubToSlackMap[githubUser] || githubUser;
       const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
-      return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+      return `- <${commitUrl}|${encodeURIComponent(
+        commitMessage
+      )}> by ${userDisplay}`;
     })
     .join('\n');
 
-  const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
+  core.info(`Commit messages: ${commitMessages}`);
+
+  const changelogUrl = encodeURI(
+    `${repoUrl}/compare/${targetBranch}...${branchName}`
+  );
   const commitListMessage = commitListMessageTemplate
     .replace('${commitListMessage}', commitMessages)
     .replace('${changelogUrl}', changelogUrl)
     .replace('${branchName}', branchName)
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
+
+  core.info(`Commit list Slack message: ${commitListMessage}`);
 
   await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
