@@ -65,6 +65,8 @@ describe('handlePROpened', () => {
         new Response(JSON.stringify(initialSlackResponse))
       ); // Mock Slack commit list message
 
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
     const octokitMock = {
       rest: {
         pulls: {
@@ -82,6 +84,12 @@ describe('handlePROpened', () => {
       commitListMessageTemplate,
       JSON.stringify(githubToSlackMap)
     );
+
+    // Print all captured console log calls
+    console.log('Captured console log calls:', consoleSpy.mock.calls);
+
+    // Make sure to restore the console log after printing
+    consoleSpy.mockRestore();
 
     expect(global.fetch).toHaveBeenCalledWith(
       'https://slack.com/api/chat.postMessage',
