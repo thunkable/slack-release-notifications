@@ -1,3 +1,4 @@
+import * as core from '@actions/core'; // Add this import
 import * as github from '@actions/github';
 
 interface Commit {
@@ -43,6 +44,8 @@ export async function handlePROpened(
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n');
 
+  core.info(`Initial Slack message: ${initialMessage}`);
+
   const initialMessageResponse = await fetch(
     'https://slack.com/api/chat.postMessage',
     {
@@ -83,6 +86,8 @@ export async function handlePROpened(
 
   const commitsData = await commitsResponse.json();
 
+  core.info(`Commits data: ${JSON.stringify(commitsData)}`);
+
   const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
   const commitMessages = commitsData
     .map((commit: Commit) => {
@@ -96,6 +101,8 @@ export async function handlePROpened(
     })
     .join('\n');
 
+  core.info(`Commit messages: ${commitMessages}`);
+
   const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
   const commitListMessage = commitListMessageTemplate
     .replace('${commitListMessage}', commitMessages)
@@ -103,6 +110,8 @@ export async function handlePROpened(
     .replace('${branchName}', branchName)
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
+
+  core.info(`Commit list Slack message: ${commitListMessage}`);
 
   await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
