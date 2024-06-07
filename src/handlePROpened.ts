@@ -90,11 +90,11 @@ export async function handlePROpened(
       const commitSha = commit.sha;
       const commitUrl = `${repoUrl}/commit/${commitSha}`;
       const githubUser = commit.author?.login || commit.commit.author.name;
-      const slackUserId = githubToSlackMap
-        ? githubToSlackMap[githubUser] || githubUser
-        : githubUser;
+      const slackUserId = githubToSlackMap[githubUser] || githubUser;
       const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
-      return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+      return `- <${commitUrl}|${encodeURIComponent(
+        commitMessage
+      )}> by ${userDisplay}`;
     })
     .join('\n');
 

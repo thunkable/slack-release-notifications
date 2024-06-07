@@ -46,7 +46,7 @@ describe('handlePROpened', () => {
         sha: '8bc9b80433fc1261d67130e35f288a5c553b5f2a',
         commit: {
           message:
-            'Just to test merge message (#53)\nCo-authored-by: Eduardo de Paula <eduardo@thunkable.com>',
+            'Test merge commit msg (#59)\nCo-authored-by: Eduardo de Paula <eduardo@thunkable.com>',
           author: {
             name: 'duckdum',
           },
@@ -110,7 +110,7 @@ describe('handlePROpened', () => {
       expect.objectContaining({
         body: JSON.stringify({
           channel: slackChannel,
-          text: 'Commits:\n- <https://github.com/owner/repo/commit/8bc9b80433fc1261d67130e35f288a5c553b5f2a|Just to test merge message (#53)> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
+          text: 'Commits:\n- <https://github.com/owner/repo/commit/8bc9b80433fc1261d67130e35f288a5c553b5f2a|Test%20merge%20commit%20msg%20(%2359)> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
           thread_ts: '12345',
         }),
         headers: {
