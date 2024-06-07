@@ -22,13 +22,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePRUpdated = void 0;
 const github = __importStar(require("@actions/github"));
-const axios_1 = __importDefault(require("axios"));
 async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMessageTemplate) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
@@ -41,13 +37,18 @@ async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMess
         throw new Error('No Slack message_ts found in pull request description');
     }
     const commitsUrl = pr.commits_url;
-    const commitsResponse = await axios_1.default.get(commitsUrl, {
+    const commitsResponse = await fetch(commitsUrl, {
         headers: {
-            'Authorization': `token ${githubToken}`
-        }
+            Authorization: `token ${githubToken}`,
+        },
     });
+    if (!commitsResponse.ok) {
+        const errorData = await commitsResponse.json();
+        throw new Error(`GitHub API request failed: ${commitsResponse.status} ${commitsResponse.statusText} - ${JSON.stringify(errorData)}`);
+    }
+    const commitsData = await commitsResponse.json();
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
-    const latestCommit = commitsResponse.data[commitsResponse.data.length - 1];
+    const latestCommit = commitsData[commitsData.length - 1];
     if (!latestCommit) {
         throw new Error('No commits found');
     }
@@ -59,15 +60,21 @@ async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMess
         .replace('${commitUrl}', commitUrl)
         .replace('${commitMessage}', commitMessage)
         .replace('${githubUser}', githubUser);
-    await axios_1.default.post('https://slack.com/api/chat.postMessage', {
-        channel: slackChannel,
-        text: updateMessage,
-        thread_ts: messageTs
-    }, {
+    const slackResponse = await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
         headers: {
-            'Authorization': `Bearer ${slackToken}`,
-            'Content-Type': 'application/json'
-        }
+            Authorization: `Bearer ${slackToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            channel: slackChannel,
+            text: updateMessage,
+            thread_ts: messageTs,
+        }),
     });
+    if (!slackResponse.ok) {
+        const errorData = await slackResponse.json();
+        throw new Error(`Slack API request failed: ${slackResponse.status} ${slackResponse.statusText} - ${JSON.stringify(errorData)}`);
+    }
 }
 exports.handlePRUpdated = handlePRUpdated;
