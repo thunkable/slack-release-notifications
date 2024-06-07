@@ -10,7 +10,7 @@ describe('handlePROpened', () => {
   const initialMessageTemplate = 'PR opened: ${prUrl} - ${prTitle}';
   const commitListMessageTemplate =
     'Commits:\n${commitListMessage}\nCompare changes: ${changelogUrl}';
-  const githubToSlackMap = { githubUser: 'slackUser' };
+  const githubToSlackMap = { duckdum: 'slackUser' };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -39,36 +39,31 @@ describe('handlePROpened', () => {
     });
   });
 
-  it('sends initial Slack message and updates PR body', async () => {
-    const initialSlackResponse = {
-      ok: true,
-      ts: '12345',
-    };
+  it('handles complex commit messages with newlines and metadata correctly', async () => {
+    const initialSlackResponse = { ok: true, ts: '12345' };
+    const commitsData = [
+      {
+        sha: '8bc9b80433fc1261d67130e35f288a5c553b5f2a',
+        commit: {
+          message:
+            'Just to test merge message (#53)\nCo-authored-by: Eduardo de Paula <eduardo@thunkable.com>',
+          author: {
+            name: 'duckdum',
+          },
+        },
+        author: {
+          login: 'duckdum',
+        },
+      },
+    ];
 
     global.fetch = jest
       .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify(initialSlackResponse)))
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify([
-            {
-              sha: 'commit1',
-              commit: {
-                message: 'Initial commit',
-                author: {
-                  name: 'author1',
-                },
-              },
-              author: {
-                login: 'githubUser',
-              },
-            },
-          ])
-        )
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify(initialSlackResponse))) // Mock Slack initial message
+      .mockResolvedValueOnce(new Response(JSON.stringify(commitsData))) // Mock GitHub commits
       .mockResolvedValueOnce(
         new Response(JSON.stringify(initialSlackResponse))
-      );
+      ); // Mock Slack commit list message
 
     const octokitMock = {
       rest: {
@@ -115,73 +110,7 @@ describe('handlePROpened', () => {
       expect.objectContaining({
         body: JSON.stringify({
           channel: slackChannel,
-          text: 'Commits:\n- <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
-          thread_ts: '12345',
-        }),
-        headers: {
-          Authorization: `Bearer ${slackToken}`,
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      })
-    );
-  });
-
-  it('handles commit messages with newlines', async () => {
-    const initialSlackResponse = {
-      ok: true,
-      ts: '12345',
-    };
-
-    global.fetch = jest
-      .fn()
-      .mockResolvedValueOnce(new Response(JSON.stringify(initialSlackResponse)))
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify([
-            {
-              sha: 'commit1',
-              commit: {
-                message: 'Initial commit\nwith newline',
-                author: {
-                  name: 'author1',
-                },
-              },
-              author: {
-                login: 'githubUser',
-              },
-            },
-          ])
-        )
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify(initialSlackResponse))
-      );
-
-    const octokitMock = {
-      rest: {
-        pulls: {
-          update: jest.fn(),
-        },
-      },
-    };
-    (github.getOctokit as jest.Mock).mockReturnValue(octokitMock);
-
-    await handlePROpened(
-      slackToken,
-      slackChannel,
-      githubToken,
-      initialMessageTemplate,
-      commitListMessageTemplate,
-      githubToSlackMap
-    );
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      'https://slack.com/api/chat.postMessage',
-      expect.objectContaining({
-        body: JSON.stringify({
-          channel: slackChannel,
-          text: 'Commits:\n- <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
+          text: 'Commits:\n- <https://github.com/owner/repo/commit/8bc9b80433fc1261d67130e35f288a5c553b5f2a|Just to test merge message (#53)> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
           thread_ts: '12345',
         }),
         headers: {
@@ -212,9 +141,7 @@ describe('handlePROpened', () => {
   });
 
   it('throws an error if initial Slack message fails', async () => {
-    const initialSlackResponse = {
-      ok: false,
-    };
+    const initialSlackResponse = { ok: false };
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce(

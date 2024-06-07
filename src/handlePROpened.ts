@@ -88,7 +88,7 @@ export async function handlePROpened(
       const commitUrl = `${repoUrl}/commit/${commitSha}`;
       const githubUser = commit.author?.login || commit.commit.author.name;
       const slackUserId = githubToSlackMap
-        ? githubToSlackMap[githubUser]
+        ? githubToSlackMap[githubUser] || githubUser
         : githubUser;
       const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
       return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
