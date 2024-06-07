@@ -17,6 +17,9 @@ jobs:
       - name: Build the project
         run: npm run build
 
+      - name: Run tests
+        run: npm run test
+
       - name: Send Slack notification
         uses: ./
         with:
