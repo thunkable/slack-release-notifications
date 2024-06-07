@@ -43,6 +43,8 @@ export async function handlePROpened(
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n');
 
+  console.log('Initial Slack message:', initialMessage);
+
   const initialMessageResponse = await fetch(
     'https://slack.com/api/chat.postMessage',
     {
@@ -103,6 +105,8 @@ export async function handlePROpened(
     .replace('${branchName}', branchName)
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
+
+  console.log('Commit list Slack message:', commitListMessage);
 
   await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',

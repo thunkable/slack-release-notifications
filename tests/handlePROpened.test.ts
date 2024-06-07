@@ -65,6 +65,8 @@ describe('handlePROpened', () => {
         new Response(JSON.stringify(initialSlackResponse))
       ); // Mock Slack commit list message
 
+    const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+
     const octokitMock = {
       rest: {
         pulls: {
@@ -120,6 +122,8 @@ describe('handlePROpened', () => {
         method: 'POST',
       })
     );
+
+    consoleSpy.mockRestore();
   });
 
   it('throws an error if no pull request is found', async () => {
