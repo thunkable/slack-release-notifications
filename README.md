@@ -63,7 +63,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run Slack notification action
-        uses: duckdum/slack-release-notifications@v1.0.0
+        uses: thunkable/slack-release-notifications@v1.0.0
         with:
           slack-token: ${{ secrets.SLACK_BOT_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
