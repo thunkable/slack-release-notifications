@@ -22,13 +22,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
-const axios_1 = __importDefault(require("axios"));
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
@@ -46,42 +42,50 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         .replace('${branchName}', branchName)
         .replace('${targetBranch}', targetBranch)
         .replace(/\\n/g, '\n');
-    const initialMessageResponse = await axios_1.default.post('https://slack.com/api/chat.postMessage', {
-        channel: slackChannel,
-        text: initialMessage
-    }, {
+    const initialMessageResponse = await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
         headers: {
-            'Authorization': `Bearer ${slackToken}`,
-            'Content-Type': 'application/json'
-        }
+            Authorization: `Bearer ${slackToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            channel: slackChannel,
+            text: initialMessage,
+        }),
     });
-    if (!initialMessageResponse.data.ok) {
+    const initialMessageData = await initialMessageResponse.json();
+    if (!initialMessageData.ok) {
         throw new Error('Failed to send initial Slack message');
     }
-    const messageTs = initialMessageResponse.data.ts;
+    const messageTs = initialMessageData.ts;
     const newPrBody = `Slack message_ts: ${messageTs}\n\n${prBody}`;
     const octokit = github.getOctokit(githubToken);
     await octokit.rest.pulls.update({
         ...github.context.repo,
         pull_number: prNumber,
-        body: newPrBody
+        body: newPrBody,
     });
     const commitsUrl = pr.commits_url;
-    const commitsResponse = await axios_1.default.get(commitsUrl, {
+    const commitsResponse = await fetch(commitsUrl, {
         headers: {
-            'Authorization': `token ${githubToken}`
-        }
+            Authorization: `token ${githubToken}`,
+        },
     });
+    const commitsData = await commitsResponse.json();
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
-    const commitMessages = commitsResponse.data.map((commit) => {
-        const commitMessage = commit.commit.message;
+    const commitMessages = commitsData
+        .map((commit) => {
+        const commitMessage = commit.commit.message.split('\n')[0]; // Extract only the first line
         const commitSha = commit.sha;
         const commitUrl = `${repoUrl}/commit/${commitSha}`;
         const githubUser = commit.author?.login || commit.commit.author.name;
-        const slackUserId = githubToSlackMap ? githubToSlackMap[githubUser] : githubUser;
+        const slackUserId = githubToSlackMap
+            ? githubToSlackMap[githubUser]
+            : null;
         const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
         return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
-    }).join('\n');
+    })
+        .join('\n');
     const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
     const commitListMessage = commitListMessageTemplate
         .replace('${commitListMessage}', commitMessages)
@@ -89,15 +93,17 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         .replace('${branchName}', branchName)
         .replace('${targetBranch}', targetBranch)
         .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
-    await axios_1.default.post('https://slack.com/api/chat.postMessage', {
-        channel: slackChannel,
-        text: commitListMessage,
-        thread_ts: messageTs
-    }, {
+    await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
         headers: {
-            'Authorization': `Bearer ${slackToken}`,
-            'Content-Type': 'application/json'
-        }
+            Authorization: `Bearer ${slackToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            channel: slackChannel,
+            text: commitListMessage,
+            thread_ts: messageTs,
+        }),
     });
 }
 exports.handlePROpened = handlePROpened;
