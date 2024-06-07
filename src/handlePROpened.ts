@@ -19,7 +19,6 @@ export async function handlePROpened(
   slackChannel: string,
   githubToken: string,
   initialMessageTemplate: string,
-  commitListMessageTemplate: string,
   githubToSlackMapJSON?: string
 ) {
   const githubToSlackMap = githubToSlackMapJSON
@@ -97,18 +96,19 @@ export async function handlePROpened(
       const githubUser = commit.author?.login || commit.commit.author.name;
       const slackUserId = githubToSlackMap[githubUser] || githubUser;
       const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
-      return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+      return `- <${commitMessage}> by ${userDisplay}`;
     })
     .join('\n');
 
-  core.info(`Commit messages: ${commitMessages}`);
+  core.info(`Commit messages  edited: ${commitMessages}`);
 
-  const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
-  const commitListMessage = commitListMessageTemplate
-    .replace('${commitListMessage}', commitMessages)
-    .replace('${changelogUrl}', changelogUrl)
-    .replace('${branchName}', branchName)
-    .replace('${targetBranch}', targetBranch);
+  //   const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
+  //   const commitListMessage = commitListMessageTemplate
+  //     .replace('${commitListMessage}', commitMessages)
+  //     .replace('${changelogUrl}', changelogUrl)
+  //     .replace('${branchName}', branchName)
+  //     .replace('${targetBranch}', targetBranch);
+  const commitListMessage = `Commits in this pull request:\n${commitMessages}`;
 
   core.info(`Commit list Slack message: ${commitListMessage}`);
 
