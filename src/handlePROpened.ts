@@ -1,4 +1,4 @@
-import * as core from '@actions/core'; // Add this import
+import * as core from '@actions/core';
 import * as github from '@actions/github';
 
 interface Commit {
@@ -93,7 +93,7 @@ export async function handlePROpened(
     .map((commit: Commit) => {
       const commitMessage = commit.commit.message.split('\n')[0]; // Extract only the first line
       const commitSha = commit.sha;
-      const commitUrl = encodeURI(`${repoUrl}/commit/${commitSha}`); // Ensure URL is properly encoded
+      const commitUrl = `${repoUrl}/commit/${commitSha}`; // Ensure URL is properly encoded
       const githubUser = commit.author?.login || commit.commit.author.name;
       const slackUserId = githubToSlackMap[githubUser] || githubUser;
       const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
@@ -103,15 +103,12 @@ export async function handlePROpened(
 
   core.info(`Commit messages: ${commitMessages}`);
 
-  const changelogUrl = encodeURI(
-    `${repoUrl}/compare/${targetBranch}...${branchName}`
-  );
+  const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
   const commitListMessage = commitListMessageTemplate
     .replace('${commitListMessage}', commitMessages)
     .replace('${changelogUrl}', changelogUrl)
     .replace('${branchName}', branchName)
-    .replace('${targetBranch}', targetBranch)
-    .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
+    .replace('${targetBranch}', targetBranch);
 
   core.info(`Commit list Slack message: ${commitListMessage}`);
 
