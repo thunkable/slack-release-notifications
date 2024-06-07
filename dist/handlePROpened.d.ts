@@ -1,1 +1,1 @@
-export declare function handlePROpened(slackToken: string, slackChannel: string, githubToken: string, initialMessageTemplate: string, commitListMessageTemplate: string, githubToSlackMap?: Record<string, string>): Promise<void>;
+export declare function handlePROpened(slackToken: string, slackChannel: string, githubToken: string, initialMessageTemplate: string, githubToSlackMapJSON?: string): Promise<void>;
