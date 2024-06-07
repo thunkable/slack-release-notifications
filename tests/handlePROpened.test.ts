@@ -9,7 +9,7 @@ describe('handlePROpened', () => {
   const githubToken = 'github-token';
   const initialMessageTemplate = 'PR opened: ${prUrl} - ${prTitle}';
   const commitListMessageTemplate =
-    'Commits:\n${commitListMessage}\nCompare changes: ${changelogUrl}';
+    'Commits:\n${commitListMessage}\n\n<${changelogUrl}|Full Changelog: ${branchName} to ${targetBranch}>';
   const githubToSlackMap = { duckdum: 'slackUser' };
 
   beforeEach(() => {
@@ -110,7 +110,7 @@ describe('handlePROpened', () => {
       expect.objectContaining({
         body: JSON.stringify({
           channel: slackChannel,
-          text: 'Commits:\n- <https://github.com/owner/repo/commit/8bc9b80433fc1261d67130e35f288a5c553b5f2a|Test%20merge%20commit%20msg%20(%2359)> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
+          text: 'Commits:\n- <https://github.com/owner/repo/commit/8bc9b80433fc1261d67130e35f288a5c553b5f2a|Test merge commit msg (#59)> by <@slackUser>\n\n<https://github.com/owner/repo/compare/main...feature-branch|Full Changelog: feature-branch to main>',
           thread_ts: '12345',
         }),
         headers: {
