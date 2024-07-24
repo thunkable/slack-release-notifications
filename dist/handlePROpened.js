@@ -71,6 +71,9 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
             Authorization: `token ${githubToken}`,
         },
     });
+    if (!commitsResponse.ok) {
+        throw new Error('Failed to fetch commits');
+    }
     const commitsData = await commitsResponse.json();
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
     const commitMessages = commitsData

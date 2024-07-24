@@ -37,42 +37,70 @@ export async function handlePRUpdated(
 
   const commitsData = await commitsResponse.json();
   const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
-  const latestCommit = commitsData[commitsData.length - 1];
 
-  if (!latestCommit) {
-    throw new Error('No commits found');
+  // Retrieve the last processed commit from the PR body
+  const lastProcessedCommitMatch = prBody.match(/Last processed commit: (\w+)/);
+  const lastProcessedCommit = lastProcessedCommitMatch
+    ? lastProcessedCommitMatch[1]
+    : null;
+
+  // Find new commits
+  const newCommits = lastProcessedCommit
+    ? commitsData.filter(
+        (commit: { sha: string }) => commit.sha !== lastProcessedCommit
+      )
+    : commitsData;
+
+  if (newCommits.length === 0) {
+    console.log('No new commits to process.');
+    return;
   }
 
-  const commitMessage = latestCommit.commit.message;
-  const commitSha = latestCommit.sha;
-  const commitUrl = `${repoUrl}/commit/${commitSha}`;
-  const githubUser =
-    latestCommit.author?.login || latestCommit.commit.author.name;
+  // Process each new commit
+  for (const commit of newCommits) {
+    const commitMessage = commit.commit.message;
+    const commitSha = commit.sha;
+    const commitUrl = `${repoUrl}/commit/${commitSha}`;
+    const githubUser = commit.author?.login || commit.commit.author.name;
 
-  const updateMessage = updateMessageTemplate
-    .replace('${commitUrl}', commitUrl)
-    .replace('${commitMessage}', commitMessage)
-    .replace('${githubUser}', githubUser);
+    const updateMessage = updateMessageTemplate
+      .replace('${commitUrl}', commitUrl)
+      .replace('${commitMessage}', commitMessage)
+      .replace('${githubUser}', githubUser);
 
-  const slackResponse = await fetch('https://slack.com/api/chat.postMessage', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${slackToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      channel: slackChannel,
-      text: updateMessage,
-      thread_ts: messageTs,
-    }),
-  });
-
-  if (!slackResponse.ok) {
-    const errorData = await slackResponse.json();
-    throw new Error(
-      `Slack API request failed: ${slackResponse.status} ${
-        slackResponse.statusText
-      } - ${JSON.stringify(errorData)}`
+    const slackResponse = await fetch(
+      'https://slack.com/api/chat.postMessage',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${slackToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          channel: slackChannel,
+          text: updateMessage,
+          thread_ts: messageTs,
+        }),
+      }
     );
+
+    if (!slackResponse.ok) {
+      const errorData = await slackResponse.json();
+      throw new Error(
+        `Slack API request failed: ${slackResponse.status} ${
+          slackResponse.statusText
+        } - ${JSON.stringify(errorData)}`
+      );
+    }
   }
+
+  // Update the PR body with the latest processed commit SHA
+  const latestCommitSha = commitsData[commitsData.length - 1].sha;
+  const newPrBody = `${prBody}\n\nLast processed commit: ${latestCommitSha}`;
+  const octokit = github.getOctokit(githubToken);
+  await octokit.rest.pulls.update({
+    ...github.context.repo,
+    pull_number: pr.number,
+    body: newPrBody,
+  });
 }

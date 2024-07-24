@@ -78,7 +78,11 @@ export async function handlePROpened(
     },
   });
 
-  const commitsData = await commitsResponse.json();
+  if (!commitsResponse.ok) {
+    throw new Error('Failed to fetch commits');
+  }
+
+  const commitsData: Commit[] = await commitsResponse.json();
 
   const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
   const commitMessages = commitsData
