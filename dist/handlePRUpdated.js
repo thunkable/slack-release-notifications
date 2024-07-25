@@ -61,7 +61,9 @@ async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMess
         .replace('${commitUrl}', commitUrl)
         .replace('${commitMessage}', commitMessage)
         .replace('${githubUser}', githubUser);
-    core.info(`Formatted commit messages: ${updateMessage}`);
+    core.info(`Updated commit messages: ${updateMessage}`);
+    core.info(`commitMessage commit messages: ${commitMessage}`);
+    core.setFailed(commitMessage);
     core.setOutput('updateMessage', updateMessage);
     const slackResponse = await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',

@@ -57,7 +57,7 @@ export async function handlePRUpdated(
 
   core.info(`Updated commit messages: ${updateMessage}`);
   core.info(`commitMessage commit messages: ${commitMessage}`);
-  core.setFailed(commitMessage);
+  core.setFailed(updateMessage);
 
   core.setOutput('updateMessage', updateMessage);
 
