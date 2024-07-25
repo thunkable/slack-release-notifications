@@ -1,4 +1,5 @@
 import * as github from '@actions/github';
+import * as core from '@actions/core';
 
 export async function handlePRUpdated(
   slackToken: string,
@@ -53,6 +54,8 @@ export async function handlePRUpdated(
     .replace('${commitUrl}', commitUrl)
     .replace('${commitMessage}', commitMessage)
     .replace('${githubUser}', githubUser);
+
+  core.info(`Formatted commit messages: ${updateMessage}`);
 
   const slackResponse = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',

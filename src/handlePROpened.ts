@@ -1,5 +1,5 @@
 import * as github from '@actions/github';
-import * as core from '@actions/core'; // Import the core module
+import * as core from '@actions/core';
 
 interface Commit {
   sha: string;

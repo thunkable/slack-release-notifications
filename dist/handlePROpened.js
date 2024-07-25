@@ -25,7 +25,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
-const core = __importStar(require("@actions/core")); // Import the core module
+const core = __importStar(require("@actions/core"));
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
