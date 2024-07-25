@@ -56,6 +56,7 @@ export async function handlePRUpdated(
     .replace('${githubUser}', githubUser);
 
   core.info(`Formatted commit messages: ${updateMessage}`);
+  core.setOutput('updateMessage', updateMessage);
 
   const slackResponse = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',

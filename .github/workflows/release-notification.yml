@@ -26,3 +26,7 @@ jobs:
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
           slack-channel: ${{ secrets.SLACK_CHANNEL }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Output commit data
+        run: echo "Commits Data ${{ steps.slack_notification_step.outputs.updateMessage }}"
+
