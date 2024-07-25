@@ -73,7 +73,8 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         },
     });
     const commitsData = await commitsResponse.json();
-    core.info(`Fetched commits data: ${JSON.stringify(commitsData, null, 2)}`);
+    core.setFailed(commitsData);
+    core.setFailed(`Fetched commits data: ${JSON.stringify(commitsData, null, 2)}`);
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
     const commitMessages = commitsData
         .map((commit) => {
@@ -89,6 +90,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
     })
         .join('\n');
     core.info(`Formatted commit messages: ${commitMessages}`);
+    core.setFailed(`Formatted commit messages: ${commitMessages}`);
     const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
     const commitListMessage = commitListMessageTemplate
         .replace('${commitListMessage}', commitMessages)

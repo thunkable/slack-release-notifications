@@ -25,7 +25,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePRUpdated = void 0;
 const github = __importStar(require("@actions/github"));
-const core = __importStar(require("@actions/core"));
 async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMessageTemplate) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
@@ -61,10 +60,6 @@ async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMess
         .replace('${commitUrl}', commitUrl)
         .replace('${commitMessage}', commitMessage)
         .replace('${githubUser}', githubUser);
-    core.info(`Updated commit messages: ${updateMessage}`);
-    core.info(`commitMessage commit messages: ${commitMessage}`);
-    core.setFailed(commitMessage);
-    core.setOutput('updateMessage', updateMessage);
     const slackResponse = await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
         headers: {
