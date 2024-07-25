@@ -31,7 +31,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         throw new Error('No pull request found');
     }
     const prTitle = pr.title;
-    const prUrl = pr.html_url || ''; // Ensure prUrl is a string
+    const prUrl = pr.html_url || '';
     const branchName = pr.head.ref;
     const targetBranch = pr.base.ref;
     const prNumber = pr.number;
@@ -72,10 +72,11 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         },
     });
     const commitsData = await commitsResponse.json();
+    console.log('Fetched commits data:', commitsData);
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
     const commitMessages = commitsData
         .map((commit) => {
-        const commitMessage = commit.commit.message.split('\n')[0]; // Extract only the first line
+        const commitMessage = commit.commit.message.split('\n')[0];
         const commitSha = commit.sha;
         const commitUrl = `${repoUrl}/commit/${commitSha}`;
         const githubUser = commit.author?.login || commit.commit.author.name;
@@ -86,13 +87,15 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
     })
         .join('\n');
+    console.log('Formatted commit messages:', commitMessages);
     const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
     const commitListMessage = commitListMessageTemplate
         .replace('${commitListMessage}', commitMessages)
         .replace('${changelogUrl}', changelogUrl)
         .replace('${branchName}', branchName)
         .replace('${targetBranch}', targetBranch)
-        .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
+        .replace(/\\n/g, '\n');
+    console.log('Final commit list message:', commitListMessage);
     await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
         headers: {
