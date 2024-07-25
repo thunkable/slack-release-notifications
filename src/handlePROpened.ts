@@ -1,4 +1,5 @@
 import * as github from '@actions/github';
+import * as core from '@actions/core'; // Import the core module
 
 interface Commit {
   sha: string;
@@ -80,7 +81,7 @@ export async function handlePROpened(
 
   const commitsData = await commitsResponse.json();
 
-  console.log('Fetched commits data:', commitsData);
+  core.info(`Fetched commits data: ${JSON.stringify(commitsData, null, 2)}`);
 
   const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
   const commitMessages = commitsData
@@ -97,7 +98,7 @@ export async function handlePROpened(
     })
     .join('\n');
 
-  console.log('Formatted commit messages:', commitMessages);
+  core.info(`Formatted commit messages: ${commitMessages}`);
 
   const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
   const commitListMessage = commitListMessageTemplate
@@ -107,7 +108,7 @@ export async function handlePROpened(
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n');
 
-  console.log('Final commit list message:', commitListMessage);
+  core.info(`Final commit list message: ${commitListMessage}`);
 
   await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',

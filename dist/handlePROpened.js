@@ -25,6 +25,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
+const core = __importStar(require("@actions/core")); // Import the core module
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
@@ -72,7 +73,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         },
     });
     const commitsData = await commitsResponse.json();
-    console.log('Fetched commits data:', commitsData);
+    core.info(`Fetched commits data: ${JSON.stringify(commitsData, null, 2)}`);
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
     const commitMessages = commitsData
         .map((commit) => {
@@ -87,7 +88,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
     })
         .join('\n');
-    console.log('Formatted commit messages:', commitMessages);
+    core.info(`Formatted commit messages: ${commitMessages}`);
     const changelogUrl = `${repoUrl}/compare/${targetBranch}...${branchName}`;
     const commitListMessage = commitListMessageTemplate
         .replace('${commitListMessage}', commitMessages)
@@ -95,7 +96,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         .replace('${branchName}', branchName)
         .replace('${targetBranch}', targetBranch)
         .replace(/\\n/g, '\n');
-    console.log('Final commit list message:', commitListMessage);
+    core.info(`Final commit list message: ${commitListMessage}`);
     await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
         headers: {
