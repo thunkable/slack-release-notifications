@@ -48,6 +48,7 @@ async function fetchAllCommits(
     allCommits.push(...commitsData);
 
     const linkHeader: string | null = response.headers.get('link');
+    core.setFailed(`Link Header: ${linkHeader}`);
     if (linkHeader) {
       const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
       url = nextLinkMatch ? nextLinkMatch[1] : null;
@@ -122,6 +123,7 @@ export async function handlePROpened(
   });
 
   const commitsUrl = pr.commits_url;
+  core.setFailed(`Commits URL: ${commitsUrl}`);
   const commitsData: Commit[] = await fetchAllCommits(commitsUrl, githubToken);
 
   const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;

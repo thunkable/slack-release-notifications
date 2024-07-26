@@ -48,6 +48,7 @@ async function fetchAllCommits(commitsUrl, githubToken) {
         }
         allCommits.push(...commitsData);
         const linkHeader = response.headers.get('link');
+        core.setFailed(`Link Header: ${linkHeader}`);
         if (linkHeader) {
             const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
             url = nextLinkMatch ? nextLinkMatch[1] : null;
@@ -101,6 +102,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         body: newPrBody,
     });
     const commitsUrl = pr.commits_url;
+    core.setFailed(`Commits URL: ${commitsUrl}`);
     const commitsData = await fetchAllCommits(commitsUrl, githubToken);
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
     let commitMessages = commitsData
