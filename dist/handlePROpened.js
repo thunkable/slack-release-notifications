@@ -26,27 +26,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
 const core = __importStar(require("@actions/core"));
-async function sendLogToSlack(log, slackToken, slackChannel) {
-    await fetch('https://slack.com/api/chat.postMessage', {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${slackToken}`,
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            channel: slackChannel,
-            text: log,
-        }),
-    });
-}
-async function fetchAllCommits(owner, repo, pullNumber, githubToken, slackToken, slackChannel) {
+async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
     const allCommits = [];
     let url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=100`;
     let page = 1;
     while (url) {
         const log = `Fetching page ${page}: ${url}`;
         core.info(log);
-        await sendLogToSlack(log, slackToken, slackChannel);
         const response = await fetch(url, {
             headers: {
                 Authorization: `token ${githubToken}`,
@@ -56,21 +42,15 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken, slackToken,
             const errorData = await response.json();
             const errorLog = `GitHub API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`;
             core.error(errorLog);
-            await sendLogToSlack(errorLog, slackToken, slackChannel);
             throw new Error(errorLog);
         }
         const commitsData = await response.json();
         const fetchedLog = `Fetched ${commitsData.length} commits on page ${page}`;
         core.info(fetchedLog);
-        await sendLogToSlack(fetchedLog, slackToken, slackChannel);
+        allCommits.push(...commitsData);
         const linkHeader = response.headers.get('link');
         const linkHeaderLog = `Link Header: ${linkHeader}`;
         core.info(linkHeaderLog);
-        await sendLogToSlack(linkHeaderLog, slackToken, slackChannel);
-        if (!Array.isArray(commitsData) || commitsData.length === 0) {
-            break;
-        }
-        allCommits.push(...commitsData);
         if (linkHeader) {
             const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
             url = nextLinkMatch ? nextLinkMatch[1] : null;
@@ -82,9 +62,7 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken, slackToken,
     }
     const totalFetchedLog = `Fetched a total of ${allCommits.length} commits`;
     core.info(totalFetchedLog);
-    await sendLogToSlack(totalFetchedLog, slackToken, slackChannel);
     core.debug(`All commits: ${JSON.stringify(allCommits)}`);
-    await sendLogToSlack(`All commits: ${JSON.stringify(allCommits)}`, slackToken, slackChannel);
     return allCommits;
 }
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
@@ -93,11 +71,13 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         throw new Error('No pull request found');
     }
     const prTitle = pr.title;
-    const prUrl = pr.html_url || ''; // Ensure prUrl is a string
+    const prUrl = pr.html_url || '';
     const branchName = pr.head.ref;
     const targetBranch = pr.base.ref;
     const prNumber = pr.number;
     const prBody = pr.body || '';
+    const logMessage = `Processing PR: ${prNumber} - ${prTitle}`;
+    core.info(logMessage);
     const initialMessage = initialMessageTemplate
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
@@ -116,6 +96,8 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         }),
     });
     const initialMessageData = await initialMessageResponse.json();
+    const initialMessageLog = `Initial message sent: ${initialMessageData.ok}`;
+    core.info(initialMessageLog);
     if (!initialMessageData.ok) {
         throw new Error('Failed to send initial Slack message');
     }
@@ -128,11 +110,11 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         body: newPrBody,
     });
     const { owner, repo } = github.context.repo;
-    const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken, slackToken, slackChannel);
+    const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken);
     const repoUrl = `https://github.com/${owner}/${repo}`;
     let commitMessages = commitsData
         .map((commit) => {
-        const commitMessage = commit.commit.message.split('\n')[0]; // Extract only the first line
+        const commitMessage = commit.commit.message.split('\n')[0];
         const commitSha = commit.sha;
         const commitUrl = `${repoUrl}/commit/${commitSha}`;
         const githubUser = commit.author?.login || commit.commit.author.name;
@@ -144,7 +126,6 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
     })
         .join('\n');
     if (commitMessages.length > 4000) {
-        // Slack message limit is 4000 characters
         const commitMessagesArr = commitMessages.match(/[\s\S]{1,4000}/g) || [];
         for (let i = 0; i < commitMessagesArr.length; i++) {
             const text = i === commitMessagesArr.length - 1
@@ -171,7 +152,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
             .replace('${changelogUrl}', changelogUrl)
             .replace('${branchName}', branchName)
             .replace('${targetBranch}', targetBranch)
-            .replace(/\\n/g, '\n'); // Replace escaped newline characters with actual newline characters
+            .replace(/\\n/g, '\n');
         await fetch('https://slack.com/api/chat.postMessage', {
             method: 'POST',
             headers: {
