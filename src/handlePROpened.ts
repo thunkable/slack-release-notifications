@@ -88,6 +88,12 @@ export async function handlePROpened(
   const prNumber: number = pr.number;
   const prBody: string = pr.body || '';
 
+  core.info(`Pull request title: ${prTitle}`);
+  core.info(`Pull request URL: ${prUrl}`);
+  core.info(`Branch name: ${branchName}`);
+  core.info(`Target branch: ${targetBranch}`);
+  core.info(`Pull request number: ${prNumber}`);
+
   const initialMessage = initialMessageTemplate
     .replace('${prUrl}', prUrl)
     .replace('${prTitle}', prTitle)
@@ -152,6 +158,8 @@ export async function handlePROpened(
       return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
     })
     .join('\n');
+
+  core.info(`Commit messages: ${commitMessages}`);
 
   if (commitMessages.length > 4000) {
     // Slack message limit is 4000 characters
