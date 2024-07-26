@@ -18,6 +18,14 @@ global.fetch = jest.fn(async (url) => {
           author: { login: 'author' },
         },
       ],
+      headers: {
+        get: (header: string) => {
+          if (header === 'link') {
+            return null;
+          }
+          return null;
+        },
+      },
     } as Response;
   }
   throw new Error('Unexpected URL');

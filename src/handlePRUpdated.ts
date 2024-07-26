@@ -1,4 +1,67 @@
 import * as github from '@actions/github';
+import * as core from '@actions/core';
+
+interface Commit {
+  sha: string;
+  commit: {
+    message: string;
+    author: {
+      name: string;
+    };
+  };
+  author: {
+    login: string;
+  } | null;
+}
+
+async function fetchAllCommits(
+  owner: string,
+  repo: string,
+  pullNumber: number,
+  githubToken: string
+): Promise<Commit[]> {
+  const allCommits: Commit[] = [];
+  let url:
+    | string
+    | null = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=100`;
+  let page = 1;
+
+  while (url) {
+    core.info(`Fetching page ${page}: ${url}`);
+    const response: Response = await fetch(url, {
+      headers: {
+        Authorization: `token ${githubToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        `GitHub API request failed: ${response.status} ${
+          response.statusText
+        } - ${JSON.stringify(errorData)}`
+      );
+    }
+
+    const commitsData: Commit[] = await response.json();
+    core.info(`Fetched ${commitsData.length} commits on page ${page}`);
+    allCommits.push(...commitsData);
+
+    const linkHeader: string | null = response.headers.get('link');
+    core.info(`Link Header: ${linkHeader}`);
+    if (linkHeader) {
+      const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+      url = nextLinkMatch ? nextLinkMatch[1] : null;
+    } else {
+      url = null;
+    }
+
+    page++;
+  }
+
+  core.info(`Fetched a total of ${allCommits.length} commits`);
+  return allCommits;
+}
 
 export async function handlePRUpdated(
   slackToken: string,
@@ -19,24 +82,13 @@ export async function handlePRUpdated(
     throw new Error('No Slack message_ts found in pull request description');
   }
 
-  const commitsUrl = pr.commits_url;
-  const commitsResponse = await fetch(commitsUrl, {
-    headers: {
-      Authorization: `token ${githubToken}`,
-    },
-  });
-
-  if (!commitsResponse.ok) {
-    const errorData = await commitsResponse.json();
-    throw new Error(
-      `GitHub API request failed: ${commitsResponse.status} ${
-        commitsResponse.statusText
-      } - ${JSON.stringify(errorData)}`
-    );
-  }
-
-  const commitsData = await commitsResponse.json();
-  const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
+  const { owner, repo } = github.context.repo;
+  const commitsData: Commit[] = await fetchAllCommits(
+    owner,
+    repo,
+    pr.number,
+    githubToken
+  );
   const latestCommit = commitsData[commitsData.length - 1];
 
   if (!latestCommit) {
@@ -45,7 +97,7 @@ export async function handlePRUpdated(
 
   const commitMessage = latestCommit.commit.message;
   const commitSha = latestCommit.sha;
-  const commitUrl = `${repoUrl}/commit/${commitSha}`;
+  const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
   const githubUser =
     latestCommit.author?.login || latestCommit.commit.author.name;
 
