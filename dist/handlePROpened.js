@@ -101,7 +101,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         pull_number: prNumber,
         body: newPrBody,
     });
-    const commitsUrl = pr.commits_url;
+    const commitsUrl = `https://api.github.com/repos/${github.context.repo.owner}/${github.context.repo.repo}/pulls/${prNumber}/commits`;
     core.setFailed(`Commits URL: ${commitsUrl}`);
     const commitsData = await fetchAllCommits(commitsUrl, githubToken);
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;

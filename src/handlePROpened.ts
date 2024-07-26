@@ -122,7 +122,7 @@ export async function handlePROpened(
     body: newPrBody,
   });
 
-  const commitsUrl = pr.commits_url;
+  const commitsUrl = `https://api.github.com/repos/${github.context.repo.owner}/${github.context.repo.repo}/pulls/${prNumber}/commits`;
   core.setFailed(`Commits URL: ${commitsUrl}`);
   const commitsData: Commit[] = await fetchAllCommits(commitsUrl, githubToken);
 
