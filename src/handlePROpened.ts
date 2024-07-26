@@ -161,13 +161,12 @@ export async function handlePROpened(
   core.info(commitMessagesLog);
 
   if (commitMessages.length > 4000) {
-    const commitMessagesArr = commitMessages.match(/[\s\S]{1,4000}/g) || [];
+    const commitMessagesArr =
+      commitMessages.match(/(.{1,3800})(?:\s|$)/gs) || [];
     for (let i = 0; i < commitMessagesArr.length; i++) {
-      let text = commitMessagesArr[i];
+      let text = commitMessagesArr[i].trim();
       if (i === commitMessagesArr.length - 1) {
         text = `${text}\n\n<${repoUrl}/compare/${targetBranch}...${branchName}|Full Changelog: ${branchName} to ${targetBranch}>`;
-      } else {
-        text = text.trim();
       }
 
       await fetch('https://slack.com/api/chat.postMessage', {
