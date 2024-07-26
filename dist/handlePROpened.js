@@ -31,7 +31,7 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
     let url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=100`;
     let page = 1;
     while (url) {
-        core.setFailed(`Fetching page ${page}: ${url}`);
+        core.info(`Fetching page ${page}: ${url}`);
         const response = await fetch(url, {
             headers: {
                 Authorization: `token ${githubToken}`,
@@ -42,13 +42,13 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
             throw new Error(`GitHub API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
         }
         const commitsData = await response.json();
-        core.setFailed(`Fetched ${commitsData.length} commits on page ${page}`);
+        core.info(`Fetched ${commitsData.length} commits on page ${page}`);
         if (!Array.isArray(commitsData) || commitsData.length === 0) {
             break;
         }
         allCommits.push(...commitsData);
         const linkHeader = response.headers.get('link');
-        core.setFailed(`Link Header: ${linkHeader}`);
+        core.info(`Link Header: ${linkHeader}`);
         if (linkHeader) {
             const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
             url = nextLinkMatch ? nextLinkMatch[1] : null;
@@ -58,7 +58,7 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
         }
         page++;
     }
-    core.setFailed(`Fetched a total of ${allCommits.length} commits`);
+    core.info(`Fetched a total of ${allCommits.length} commits`);
     return allCommits;
 }
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
@@ -102,7 +102,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         body: newPrBody,
     });
     const { owner, repo } = github.context.repo;
-    core.setFailed(`Commits URL: https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits`);
+    core.info(`Commits URL: https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits`);
     const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken);
     const repoUrl = `https://github.com/${owner}/${repo}`;
     let commitMessages = commitsData

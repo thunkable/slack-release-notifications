@@ -1,5 +1,6 @@
 import * as github from '@actions/github';
 import * as core from '@actions/core';
+
 interface Commit {
   sha: string;
   commit: {
@@ -26,7 +27,7 @@ async function fetchAllCommits(
   let page = 1;
 
   while (url) {
-    core.setFailed(`Fetching page ${page}: ${url}`);
+    core.info(`Fetching page ${page}: ${url}`);
     const response: Response = await fetch(url, {
       headers: {
         Authorization: `token ${githubToken}`,
@@ -43,7 +44,7 @@ async function fetchAllCommits(
     }
 
     const commitsData: Commit[] = await response.json();
-    core.setFailed(`Fetched ${commitsData.length} commits on page ${page}`);
+    core.info(`Fetched ${commitsData.length} commits on page ${page}`);
 
     if (!Array.isArray(commitsData) || commitsData.length === 0) {
       break;
@@ -52,7 +53,7 @@ async function fetchAllCommits(
     allCommits.push(...commitsData);
 
     const linkHeader: string | null = response.headers.get('link');
-    core.setFailed(`Link Header: ${linkHeader}`);
+    core.info(`Link Header: ${linkHeader}`);
     if (linkHeader) {
       const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
       url = nextLinkMatch ? nextLinkMatch[1] : null;
@@ -63,7 +64,7 @@ async function fetchAllCommits(
     page++;
   }
 
-  core.setFailed(`Fetched a total of ${allCommits.length} commits`);
+  core.info(`Fetched a total of ${allCommits.length} commits`);
   return allCommits;
 }
 
@@ -127,7 +128,7 @@ export async function handlePROpened(
   });
 
   const { owner, repo } = github.context.repo;
-  core.setFailed(
+  core.info(
     `Commits URL: https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits`
   );
   const commitsData: Commit[] = await fetchAllCommits(
