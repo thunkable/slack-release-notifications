@@ -13,6 +13,47 @@ interface Commit {
   } | null;
 }
 
+async function fetchAllCommits(
+  commitsUrl: string,
+  githubToken: string
+): Promise<Commit[]> {
+  const allCommits: Commit[] = [];
+  let url: string | null = `${commitsUrl}?per_page=100`;
+
+  while (url) {
+    const response: Response = await fetch(url, {
+      headers: {
+        Authorization: `token ${githubToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        `GitHub API request failed: ${response.status} ${
+          response.statusText
+        } - ${JSON.stringify(errorData)}`
+      );
+    }
+
+    const commitsData: Commit[] = await response.json();
+
+    if (!Array.isArray(commitsData) || commitsData.length === 0) {
+      break;
+    }
+
+    allCommits.push(...commitsData);
+
+    const linkHeader: string | null = response.headers.get('link');
+    const nextLink = linkHeader
+      ? linkHeader.match(/<([^>]+)>;\s*rel="next"/)
+      : null;
+    url = nextLink ? nextLink[1] : null;
+  }
+
+  return allCommits;
+}
+
 export async function handlePROpened(
   slackToken: string,
   slackChannel: string,
@@ -40,7 +81,7 @@ export async function handlePROpened(
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n');
 
-  const initialMessageResponse = await fetch(
+  const initialMessageResponse: Response = await fetch(
     'https://slack.com/api/chat.postMessage',
     {
       method: 'POST',
@@ -55,13 +96,14 @@ export async function handlePROpened(
     }
   );
 
-  const initialMessageData = await initialMessageResponse.json();
+  const initialMessageData: { ok: boolean; ts: string } =
+    await initialMessageResponse.json();
 
   if (!initialMessageData.ok) {
     throw new Error('Failed to send initial Slack message');
   }
 
-  const messageTs = initialMessageData.ts;
+  const messageTs: string = initialMessageData.ts;
 
   const newPrBody = `Slack message_ts: ${messageTs}\n\n${prBody}`;
   const octokit = github.getOctokit(githubToken);
@@ -72,13 +114,7 @@ export async function handlePROpened(
   });
 
   const commitsUrl = pr.commits_url;
-  const commitsResponse = await fetch(commitsUrl, {
-    headers: {
-      Authorization: `token ${githubToken}`,
-    },
-  });
-
-  const commitsData = await commitsResponse.json();
+  const commitsData: Commit[] = await fetchAllCommits(commitsUrl, githubToken);
 
   const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
   const commitMessages = commitsData

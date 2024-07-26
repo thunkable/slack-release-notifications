@@ -25,6 +25,32 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
+async function fetchAllCommits(commitsUrl, githubToken) {
+    const allCommits = [];
+    let url = `${commitsUrl}?per_page=100`;
+    while (url) {
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `token ${githubToken}`,
+            },
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`GitHub API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+        }
+        const commitsData = await response.json();
+        if (!Array.isArray(commitsData) || commitsData.length === 0) {
+            break;
+        }
+        allCommits.push(...commitsData);
+        const linkHeader = response.headers.get('link');
+        const nextLink = linkHeader
+            ? linkHeader.match(/<([^>]+)>;\s*rel="next"/)
+            : null;
+        url = nextLink ? nextLink[1] : null;
+    }
+    return allCommits;
+}
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
@@ -66,12 +92,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         body: newPrBody,
     });
     const commitsUrl = pr.commits_url;
-    const commitsResponse = await fetch(commitsUrl, {
-        headers: {
-            Authorization: `token ${githubToken}`,
-        },
-    });
-    const commitsData = await commitsResponse.json();
+    const commitsData = await fetchAllCommits(commitsUrl, githubToken);
     const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
     const commitMessages = commitsData
         .map((commit) => {
