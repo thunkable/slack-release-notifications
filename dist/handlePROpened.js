@@ -26,9 +26,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
 const core = __importStar(require("@actions/core"));
-async function fetchAllCommits(commitsUrl, githubToken) {
+async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
     const allCommits = [];
-    let url = `${commitsUrl}?per_page=100`;
+    let url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=100`;
     let page = 1;
     while (url) {
         core.setFailed(`Fetching page ${page}: ${url}`);
@@ -101,10 +101,10 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         pull_number: prNumber,
         body: newPrBody,
     });
-    const commitsUrl = `https://api.github.com/repos/${github.context.repo.owner}/${github.context.repo.repo}/pulls/${prNumber}/commits`;
-    core.setFailed(`Commits URL: ${commitsUrl}`);
-    const commitsData = await fetchAllCommits(commitsUrl, githubToken);
-    const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
+    const { owner, repo } = github.context.repo;
+    core.setFailed(`Commits URL: https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits`);
+    const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken);
+    const repoUrl = `https://github.com/${owner}/${repo}`;
     let commitMessages = commitsData
         .map((commit) => {
         const commitMessage = commit.commit.message.split('\n')[0]; // Extract only the first line

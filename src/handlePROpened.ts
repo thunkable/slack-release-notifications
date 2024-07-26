@@ -14,11 +14,15 @@ interface Commit {
 }
 
 async function fetchAllCommits(
-  commitsUrl: string,
+  owner: string,
+  repo: string,
+  pullNumber: number,
   githubToken: string
 ): Promise<Commit[]> {
   const allCommits: Commit[] = [];
-  let url: string | null = `${commitsUrl}?per_page=100`;
+  let url:
+    | string
+    | null = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=100`;
   let page = 1;
 
   while (url) {
@@ -122,11 +126,18 @@ export async function handlePROpened(
     body: newPrBody,
   });
 
-  const commitsUrl = `https://api.github.com/repos/${github.context.repo.owner}/${github.context.repo.repo}/pulls/${prNumber}/commits`;
-  core.setFailed(`Commits URL: ${commitsUrl}`);
-  const commitsData: Commit[] = await fetchAllCommits(commitsUrl, githubToken);
+  const { owner, repo } = github.context.repo;
+  core.setFailed(
+    `Commits URL: https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits`
+  );
+  const commitsData: Commit[] = await fetchAllCommits(
+    owner,
+    repo,
+    prNumber,
+    githubToken
+  );
 
-  const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
+  const repoUrl = `https://github.com/${owner}/${repo}`;
   let commitMessages = commitsData
     .map((commit: Commit) => {
       const commitMessage = commit.commit.message.split('\n')[0]; // Extract only the first line
