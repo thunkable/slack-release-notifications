@@ -25,46 +25,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
-const core = __importStar(require("@actions/core"));
-async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
-    const allCommits = [];
-    let url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=100`;
-    let page = 1;
-    while (url) {
-        const log = `Fetching page ${page}: ${url}`;
-        core.info(log);
-        const response = await fetch(url, {
-            headers: {
-                Authorization: `token ${githubToken}`,
-            },
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            const errorLog = `GitHub API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`;
-            core.error(errorLog);
-            throw new Error(errorLog);
-        }
-        const commitsData = await response.json();
-        const fetchedLog = `Fetched ${commitsData.length} commits on page ${page}`;
-        core.info(fetchedLog);
-        allCommits.push(...commitsData);
-        const linkHeader = response.headers.get('link');
-        const linkHeaderLog = `Link Header: ${linkHeader}`;
-        core.info(linkHeaderLog);
-        if (linkHeader) {
-            const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
-            url = nextLinkMatch ? nextLinkMatch[1] : null;
-        }
-        else {
-            url = null;
-        }
-        page++;
-    }
-    const totalFetchedLog = `Fetched a total of ${allCommits.length} commits`;
-    core.info(totalFetchedLog);
-    core.debug(`All commits: ${JSON.stringify(allCommits)}`);
-    return allCommits;
-}
+const fetchAllCommits_1 = require("./utils/fetchAllCommits");
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
@@ -76,8 +37,6 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
     const targetBranch = pr.base.ref;
     const prNumber = pr.number;
     const prBody = pr.body || '';
-    const logMessage = `Processing PR: ${prNumber} - ${prTitle}`;
-    core.info(logMessage);
     const initialMessage = initialMessageTemplate
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
@@ -96,8 +55,6 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         }),
     });
     const initialMessageData = await initialMessageResponse.json();
-    const initialMessageLog = `Initial message sent: ${initialMessageData.ok}`;
-    core.info(initialMessageLog);
     if (!initialMessageData.ok) {
         throw new Error('Failed to send initial Slack message');
     }
@@ -110,7 +67,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         body: newPrBody,
     });
     const { owner, repo } = github.context.repo;
-    const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken);
+    const commitsData = await (0, fetchAllCommits_1.fetchAllCommits)(owner, repo, prNumber, githubToken);
     const repoUrl = `https://github.com/${owner}/${repo}`;
     let commitMessages = commitsData
         .map((commit) => {
@@ -125,8 +82,6 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
     })
         .join('\n');
-    const commitMessagesLog = `Commit messages:\n${commitMessages}`;
-    core.info(commitMessagesLog);
     if (commitMessages.length > 4000) {
         const commitMessagesArr = [];
         let chunk = '';
