@@ -73,12 +73,9 @@ async function fetchAllCommits(
     await sendLogToSlack(fetchedLog, slackToken, slackChannel);
 
     const linkHeader: string | null = response.headers.get('link');
-    core.info(`Link Header: ${linkHeader}`);
-    await sendLogToSlack(
-      `Link Header: ${linkHeader}`,
-      slackToken,
-      slackChannel
-    );
+    const linkHeaderLog = `Link Header: ${linkHeader}`;
+    core.info(linkHeaderLog);
+    await sendLogToSlack(linkHeaderLog, slackToken, slackChannel);
 
     if (!Array.isArray(commitsData) || commitsData.length === 0) {
       break;
@@ -100,6 +97,11 @@ async function fetchAllCommits(
   core.info(totalFetchedLog);
   await sendLogToSlack(totalFetchedLog, slackToken, slackChannel);
   core.debug(`All commits: ${JSON.stringify(allCommits)}`);
+  await sendLogToSlack(
+    `All commits: ${JSON.stringify(allCommits)}`,
+    slackToken,
+    slackChannel
+  );
   return allCommits;
 }
 

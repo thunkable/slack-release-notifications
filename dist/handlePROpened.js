@@ -64,8 +64,9 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken, slackToken,
         core.info(fetchedLog);
         await sendLogToSlack(fetchedLog, slackToken, slackChannel);
         const linkHeader = response.headers.get('link');
-        core.info(`Link Header: ${linkHeader}`);
-        await sendLogToSlack(`Link Header: ${linkHeader}`, slackToken, slackChannel);
+        const linkHeaderLog = `Link Header: ${linkHeader}`;
+        core.info(linkHeaderLog);
+        await sendLogToSlack(linkHeaderLog, slackToken, slackChannel);
         if (!Array.isArray(commitsData) || commitsData.length === 0) {
             break;
         }
@@ -83,6 +84,7 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken, slackToken,
     core.info(totalFetchedLog);
     await sendLogToSlack(totalFetchedLog, slackToken, slackChannel);
     core.debug(`All commits: ${JSON.stringify(allCommits)}`);
+    await sendLogToSlack(`All commits: ${JSON.stringify(allCommits)}`, slackToken, slackChannel);
     return allCommits;
 }
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
