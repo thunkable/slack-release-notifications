@@ -1,6 +1,15 @@
 import * as github from '@actions/github';
 import { fetchAllCommits, Commit } from './utils/fetchAllCommits';
 
+/**
+ * Handles the event when a pull request is opened.
+ * @param slackToken - Slack bot token.
+ * @param slackChannel - Slack channel ID.
+ * @param githubToken - GitHub token.
+ * @param initialMessageTemplate - Template for the initial Slack message.
+ * @param commitListMessageTemplate - Template for the commit list Slack message.
+ * @param githubToSlackMap - Optional mapping of GitHub usernames to Slack user IDs.
+ */
 export async function handlePROpened(
   slackToken: string,
   slackChannel: string,
@@ -21,6 +30,7 @@ export async function handlePROpened(
   const prNumber: number = pr.number;
   const prBody: string = pr.body || '';
 
+  // Format the initial Slack message
   const initialMessage = initialMessageTemplate
     .replace('${prUrl}', prUrl)
     .replace('${prTitle}', prTitle)
@@ -28,6 +38,7 @@ export async function handlePROpened(
     .replace('${targetBranch}', targetBranch)
     .replace(/\\n/g, '\n');
 
+  // Send the initial message to Slack
   const initialMessageResponse = await fetch(
     'https://slack.com/api/chat.postMessage',
     {
@@ -51,6 +62,7 @@ export async function handlePROpened(
 
   const messageTs = initialMessageData.ts;
 
+  // Update the pull request body with the Slack message timestamp
   const newPrBody = `Slack message_ts: ${messageTs}\n\n${prBody}`;
   const octokit = github.getOctokit(githubToken);
   await octokit.rest.pulls.update({
@@ -59,10 +71,12 @@ export async function handlePROpened(
     body: newPrBody,
   });
 
+  // Fetch all commits for the pull request
   const { owner, repo } = github.context.repo;
   const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken);
 
   const repoUrl = `https://github.com/${owner}/${repo}`;
+  // Format the commit messages
   let commitMessages = commitsData
     .map((commit: Commit) => {
       const commitMessage = commit.commit.message.split('\n')[0];
@@ -77,6 +91,7 @@ export async function handlePROpened(
     })
     .join('\n');
 
+  // Handle Slack message length limits
   if (commitMessages.length > 4000) {
     const commitMessagesArr = [];
     let chunk = '';
@@ -94,6 +109,7 @@ export async function handlePROpened(
       commitMessagesArr.push(chunk.trim());
     }
 
+    // Send multiple messages if necessary
     for (let i = 0; i < commitMessagesArr.length; i++) {
       let text = commitMessagesArr[i];
       if (i === commitMessagesArr.length - 1) {
@@ -122,6 +138,7 @@ export async function handlePROpened(
       .replace('${targetBranch}', targetBranch)
       .replace(/\\n/g, '\n');
 
+    // Send the commit list message to Slack
     await fetch('https://slack.com/api/chat.postMessage', {
       method: 'POST',
       headers: {

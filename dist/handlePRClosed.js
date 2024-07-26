@@ -25,6 +25,12 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePRClosed = void 0;
 const github = __importStar(require("@actions/github"));
+/**
+ * Handles the event when a pull request is closed.
+ * @param slackToken - Slack bot token.
+ * @param slackChannel - Slack channel ID.
+ * @param closeMessageTemplate - Template for the close Slack message.
+ */
 async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
@@ -37,6 +43,7 @@ async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
     const prTitle = pr.title;
     const prUrl = pr.html_url || '';
     const mergedBy = pr.merged_by.login;
+    // Extract the Slack message timestamp from the pull request body
     const prBody = pr.body || '';
     const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
     const messageTs = messageTsMatch ? messageTsMatch[1] : null;
@@ -47,6 +54,7 @@ async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
         .replace('${mergedBy}', mergedBy);
+    // Send the close message to Slack in the same thread as the initial message
     const response = await fetch('https://slack.com/api/chat.postMessage', {
         method: 'POST',
         headers: {
