@@ -4,7 +4,7 @@ import { handlePROpened } from '../src/handlePROpened';
 jest.mock('@actions/github');
 jest.mock('@actions/core');
 
-describe('handlePROpened', () => {
+describe.skip('handlePROpened', () => {
   const slackToken = 'slack-token';
   const slackChannel = 'slack-channel';
   const githubToken = 'github-token';

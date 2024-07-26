@@ -26,12 +26,27 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handlePROpened = void 0;
 const github = __importStar(require("@actions/github"));
 const core = __importStar(require("@actions/core"));
-async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
+async function sendLogToSlack(log, slackToken, slackChannel) {
+    await fetch('https://slack.com/api/chat.postMessage', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${slackToken}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            channel: slackChannel,
+            text: log,
+        }),
+    });
+}
+async function fetchAllCommits(owner, repo, pullNumber, githubToken, slackToken, slackChannel) {
     const allCommits = [];
     let url = `https://api.github.com/repos/${owner}/${repo}/pulls/${pullNumber}/commits?per_page=100`;
     let page = 1;
     while (url) {
-        core.info(`Fetching page ${page}: ${url}`);
+        const log = `Fetching page ${page}: ${url}`;
+        core.info(log);
+        await sendLogToSlack(log, slackToken, slackChannel);
         const response = await fetch(url, {
             headers: {
                 Authorization: `token ${githubToken}`,
@@ -39,16 +54,22 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
         });
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(`GitHub API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+            const errorLog = `GitHub API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`;
+            core.error(errorLog);
+            await sendLogToSlack(errorLog, slackToken, slackChannel);
+            throw new Error(errorLog);
         }
         const commitsData = await response.json();
-        core.info(`Fetched ${commitsData.length} commits on page ${page}`);
+        const fetchedLog = `Fetched ${commitsData.length} commits on page ${page}`;
+        core.info(fetchedLog);
+        await sendLogToSlack(fetchedLog, slackToken, slackChannel);
+        const linkHeader = response.headers.get('link');
+        core.info(`Link Header: ${linkHeader}`);
+        await sendLogToSlack(`Link Header: ${linkHeader}`, slackToken, slackChannel);
         if (!Array.isArray(commitsData) || commitsData.length === 0) {
             break;
         }
         allCommits.push(...commitsData);
-        const linkHeader = response.headers.get('link');
-        core.info(`Link Header: ${linkHeader}`);
         if (linkHeader) {
             const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
             url = nextLinkMatch ? nextLinkMatch[1] : null;
@@ -58,7 +79,10 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
         }
         page++;
     }
-    core.info(`Fetched a total of ${allCommits.length} commits`);
+    const totalFetchedLog = `Fetched a total of ${allCommits.length} commits`;
+    core.info(totalFetchedLog);
+    await sendLogToSlack(totalFetchedLog, slackToken, slackChannel);
+    core.debug(`All commits: ${JSON.stringify(allCommits)}`);
     return allCommits;
 }
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
@@ -102,8 +126,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         body: newPrBody,
     });
     const { owner, repo } = github.context.repo;
-    core.info(`Commits URL: https://api.github.com/repos/${owner}/${repo}/pulls/${prNumber}/commits`);
-    const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken);
+    const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken, slackToken, slackChannel);
     const repoUrl = `https://github.com/${owner}/${repo}`;
     let commitMessages = commitsData
         .map((commit) => {
