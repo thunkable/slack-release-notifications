@@ -29,7 +29,9 @@ const core = __importStar(require("@actions/core"));
 async function fetchAllCommits(commitsUrl, githubToken) {
     const allCommits = [];
     let url = `${commitsUrl}?per_page=100`;
+    let page = 1;
     while (url) {
+        core.setFailed(`Fetching page ${page}: ${url}`);
         const response = await fetch(url, {
             headers: {
                 Authorization: `token ${githubToken}`,
@@ -40,6 +42,7 @@ async function fetchAllCommits(commitsUrl, githubToken) {
             throw new Error(`GitHub API request failed: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
         }
         const commitsData = await response.json();
+        core.setFailed(`Fetched ${commitsData.length} commits on page ${page}`);
         if (!Array.isArray(commitsData) || commitsData.length === 0) {
             break;
         }
@@ -52,8 +55,9 @@ async function fetchAllCommits(commitsUrl, githubToken) {
         else {
             url = null;
         }
+        page++;
     }
-    core.setFailed(`Fetched ${allCommits.length} commits`);
+    core.setFailed(`Fetched a total of ${allCommits.length} commits`);
     return allCommits;
 }
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {

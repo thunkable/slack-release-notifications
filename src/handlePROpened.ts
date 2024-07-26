@@ -19,8 +19,10 @@ async function fetchAllCommits(
 ): Promise<Commit[]> {
   const allCommits: Commit[] = [];
   let url: string | null = `${commitsUrl}?per_page=100`;
+  let page = 1;
 
   while (url) {
+    core.setFailed(`Fetching page ${page}: ${url}`);
     const response: Response = await fetch(url, {
       headers: {
         Authorization: `token ${githubToken}`,
@@ -37,6 +39,7 @@ async function fetchAllCommits(
     }
 
     const commitsData: Commit[] = await response.json();
+    core.setFailed(`Fetched ${commitsData.length} commits on page ${page}`);
 
     if (!Array.isArray(commitsData) || commitsData.length === 0) {
       break;
@@ -51,9 +54,11 @@ async function fetchAllCommits(
     } else {
       url = null;
     }
+
+    page++;
   }
 
-  core.setFailed(`Fetched ${allCommits.length} commits`);
+  core.setFailed(`Fetched a total of ${allCommits.length} commits`);
   return allCommits;
 }
 
