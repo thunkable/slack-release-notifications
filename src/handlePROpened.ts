@@ -45,10 +45,12 @@ async function fetchAllCommits(
     allCommits.push(...commitsData);
 
     const linkHeader: string | null = response.headers.get('link');
-    const nextLink = linkHeader
-      ? linkHeader.match(/<([^>]+)>;\s*rel="next"/)
-      : null;
-    url = nextLink ? nextLink[1] : null;
+    if (linkHeader) {
+      const nextLinkMatch = linkHeader.match(/<([^>]+)>;\s*rel="next"/);
+      url = nextLinkMatch ? nextLinkMatch[1] : null;
+    } else {
+      url = null;
+    }
   }
 
   return allCommits;
