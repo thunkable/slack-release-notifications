@@ -32,6 +32,7 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
     let page = 1;
     while (url) {
         core.info(`Fetching page ${page}: ${url}`);
+        console.log(`Fetching page ${page}: ${url}`);
         const response = await fetch(url, {
             headers: {
                 Authorization: `token ${githubToken}`,
@@ -43,6 +44,8 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
         }
         const commitsData = await response.json();
         core.info(`Fetched ${commitsData.length} commits on page ${page}`);
+        core.debug(`Response Headers: ${JSON.stringify([...response.headers])}`);
+        console.log(`Response Headers: ${JSON.stringify([...response.headers])}`);
         if (!Array.isArray(commitsData) || commitsData.length === 0) {
             break;
         }
@@ -59,6 +62,8 @@ async function fetchAllCommits(owner, repo, pullNumber, githubToken) {
         page++;
     }
     core.info(`Fetched a total of ${allCommits.length} commits`);
+    console.log(`Fetched a total of ${allCommits.length} commits`);
+    core.debug(`All commits: ${JSON.stringify(allCommits)}`);
     return allCommits;
 }
 async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
@@ -72,6 +77,11 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
     const targetBranch = pr.base.ref;
     const prNumber = pr.number;
     const prBody = pr.body || '';
+    core.info(`Pull request title: ${prTitle}`);
+    core.info(`Pull request URL: ${prUrl}`);
+    core.info(`Branch name: ${branchName}`);
+    core.info(`Target branch: ${targetBranch}`);
+    core.info(`Pull request number: ${prNumber}`);
     const initialMessage = initialMessageTemplate
         .replace('${prUrl}', prUrl)
         .replace('${prTitle}', prTitle)
@@ -118,6 +128,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
     })
         .join('\n');
+    core.info(`Commit messages: ${commitMessages}`);
     if (commitMessages.length > 4000) {
         // Slack message limit is 4000 characters
         const commitMessagesArr = commitMessages.match(/[\s\S]{1,4000}/g) || [];
