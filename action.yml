@@ -31,7 +31,7 @@ inputs:
     default: 'Pull request <${prUrl}|${prTitle}> was merged by @${mergedBy}'
 runs:
   using: 'node20'
-  main: 'dist/main.js'
+  main: 'dist/main.ts'
 branding:
   icon: 'bell'
   color: 'blue'

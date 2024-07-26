@@ -2,7 +2,7 @@
   "name": "slack-release-notification",
   "version": "1.0.0",
   "description": "A GitHub Action to send Slack notifications for release pull requests",
-  "main": "dist/main.js",
+  "main": "src/main.ts",
   "scripts": {
     "build": "tsc",
     "test": "jest"
