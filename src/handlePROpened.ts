@@ -13,6 +13,46 @@ interface Commit {
   } | null;
 }
 
+async function fetchAllCommits(
+  commitsUrl: string,
+  githubToken: string
+): Promise<Commit[]> {
+  const allCommits: Commit[] = [];
+  let page = 1;
+  const perPage = 100;
+
+  while (true) {
+    const response = await fetch(
+      `${commitsUrl}?per_page=${perPage}&page=${page}`,
+      {
+        headers: {
+          Authorization: `token ${githubToken}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        `GitHub API request failed: ${response.status} ${
+          response.statusText
+        } - ${JSON.stringify(errorData)}`
+      );
+    }
+
+    const commitsData = await response.json();
+
+    if (!Array.isArray(commitsData) || commitsData.length === 0) {
+      break;
+    }
+
+    allCommits.push(...commitsData);
+    page += 1;
+  }
+
+  return allCommits;
+}
+
 export async function handlePROpened(
   slackToken: string,
   slackChannel: string,
@@ -72,13 +112,7 @@ export async function handlePROpened(
   });
 
   const commitsUrl = pr.commits_url;
-  const commitsResponse = await fetch(commitsUrl, {
-    headers: {
-      Authorization: `token ${githubToken}`,
-    },
-  });
-
-  const commitsData = await commitsResponse.json();
+  const commitsData = await fetchAllCommits(commitsUrl, githubToken);
 
   const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
   const commitMessages = commitsData
