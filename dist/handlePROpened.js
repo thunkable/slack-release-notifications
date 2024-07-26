@@ -128,14 +128,25 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
     const commitMessagesLog = `Commit messages:\n${commitMessages}`;
     core.info(commitMessagesLog);
     if (commitMessages.length > 4000) {
-        const commitMessagesArr = commitMessages.match(/[\s\S]{1,4000}/g) || [];
+        const commitMessagesArr = [];
+        let chunk = '';
+        const lines = commitMessages.split('\n');
+        for (const line of lines) {
+            if ((chunk + '\n' + line).length > 3800) {
+                commitMessagesArr.push(chunk.trim());
+                chunk = line;
+            }
+            else {
+                chunk += '\n' + line;
+            }
+        }
+        if (chunk) {
+            commitMessagesArr.push(chunk.trim());
+        }
         for (let i = 0; i < commitMessagesArr.length; i++) {
             let text = commitMessagesArr[i];
             if (i === commitMessagesArr.length - 1) {
                 text = `${text}\n\n<${repoUrl}/compare/${targetBranch}...${branchName}|Full Changelog: ${branchName} to ${targetBranch}>`;
-            }
-            else {
-                text = text.trim();
             }
             await fetch('https://slack.com/api/chat.postMessage', {
                 method: 'POST',
