@@ -29,6 +29,10 @@ inputs:
     description: 'Template for the message when a PR is merged'
     required: false
     default: 'Pull request <${prUrl}|${prTitle}> was merged by @${mergedBy}'
+  sort-commits:
+    description: 'Sort commits by types and scopes'
+    required: false
+    default: 'false'
 runs:
   using: 'node20'
   main: 'dist/index.js'

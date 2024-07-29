@@ -16,6 +16,7 @@ async function run() {
       'commit-list-message-template'
     );
     const githubToSlackMap = core.getInput('github-to-slack-map');
+    const sortCommits = core.getInput('sort-commits') === 'true';
     const githubToSlackMapParsed = githubToSlackMap
       ? JSON.parse(githubToSlackMap)
       : undefined;
@@ -30,7 +31,8 @@ async function run() {
           githubToken,
           initialMessageTemplate,
           commitListMessageTemplate,
-          githubToSlackMapParsed
+          githubToSlackMapParsed,
+          sortCommits
         );
         break;
       case 'synchronize':

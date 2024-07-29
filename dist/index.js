@@ -29311,8 +29311,9 @@ const fetchAllCommits_1 = __nccwpck_require__(2857);
  * @param initialMessageTemplate - Template for the initial Slack message.
  * @param commitListMessageTemplate - Template for the commit list Slack message.
  * @param githubToSlackMap - Optional mapping of GitHub usernames to Slack user IDs.
+ * @param sortCommits - Flag to sort commits by types and scopes.
  */
-async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap) {
+async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap, sortCommits = false) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -29358,21 +29359,66 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
     // Fetch all commits for the pull request
     const { owner, repo } = github.context.repo;
     const commitsData = await (0, fetchAllCommits_1.fetchAllCommits)(owner, repo, prNumber, githubToken);
+    let commitMessages;
+    if (sortCommits) {
+        // Categorize commits by scopes and sort them alphabetically by type
+        const categorizedCommits = commitsData.reduce((acc, commit) => {
+            const commitMessage = commit.commit.message.split('\n')[0];
+            const commitSha = commit.sha;
+            const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
+            const githubUser = commit.author?.login || commit.commit.author.name;
+            const slackUserId = githubToSlackMap
+                ? githubToSlackMap[githubUser]
+                : null;
+            const userDisplay = slackUserId
+                ? `<@${slackUserId}>`
+                : `@${githubUser}`;
+            const commitEntry = `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+            const scopeMatch = commitMessage.match(/^\w+\(([\w,]+)\):/);
+            const scopes = scopeMatch ? scopeMatch[1].split(',') : ['other'];
+            const type = commitMessage.split('(')[0].trim();
+            scopes.forEach((scope, index) => {
+                const key = scope.trim();
+                if (!acc[key]) {
+                    acc[key] = {};
+                }
+                if (!acc[key][type]) {
+                    acc[key][type] = [];
+                }
+                if (index === 0) {
+                    acc[key][type].push(commitEntry);
+                }
+            });
+            return acc;
+        }, {});
+        // Format commit messages
+        commitMessages = Object.keys(categorizedCommits)
+            .sort()
+            .map((scope) => `*${scope.charAt(0).toUpperCase() + scope.slice(1)}*\n` +
+            Object.keys(categorizedCommits[scope])
+                .sort()
+                .map((type) => categorizedCommits[scope][type].sort().join('\n'))
+                .join('\n'))
+            .join('\n\n');
+    }
+    else {
+        commitMessages = commitsData
+            .map((commit) => {
+            const commitMessage = commit.commit.message.split('\n')[0];
+            const commitSha = commit.sha;
+            const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
+            const githubUser = commit.author?.login || commit.commit.author.name;
+            const slackUserId = githubToSlackMap
+                ? githubToSlackMap[githubUser]
+                : null;
+            const userDisplay = slackUserId
+                ? `<@${slackUserId}>`
+                : `@${githubUser}`;
+            return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+        })
+            .join('\n');
+    }
     const repoUrl = `https://github.com/${owner}/${repo}`;
-    // Format the commit messages
-    let commitMessages = commitsData
-        .map((commit) => {
-        const commitMessage = commit.commit.message.split('\n')[0];
-        const commitSha = commit.sha;
-        const commitUrl = `${repoUrl}/commit/${commitSha}`;
-        const githubUser = commit.author?.login || commit.commit.author.name;
-        const slackUserId = githubToSlackMap
-            ? githubToSlackMap[githubUser]
-            : null;
-        const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
-        return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
-    })
-        .join('\n');
     // Handle Slack message length limits
     if (commitMessages.length > 4000) {
         const commitMessagesArr = [];
@@ -29390,7 +29436,6 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
         if (chunk) {
             commitMessagesArr.push(chunk.trim());
         }
-        // Send multiple messages if necessary
         for (let i = 0; i < commitMessagesArr.length; i++) {
             let text = commitMessagesArr[i];
             if (i === commitMessagesArr.length - 1) {
@@ -29573,13 +29618,14 @@ async function run() {
         const closeMessageTemplate = core.getInput('close-message-template');
         const commitListMessageTemplate = core.getInput('commit-list-message-template');
         const githubToSlackMap = core.getInput('github-to-slack-map');
+        const sortCommits = core.getInput('sort-commits') === 'true';
         const githubToSlackMapParsed = githubToSlackMap
             ? JSON.parse(githubToSlackMap)
             : undefined;
         const action = github.context.payload.action;
         switch (action) {
             case 'opened':
-                await (0, handlePROpened_1.handlePROpened)(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMapParsed);
+                await (0, handlePROpened_1.handlePROpened)(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMapParsed, sortCommits);
                 break;
             case 'synchronize':
                 await (0, handlePRUpdated_1.handlePRUpdated)(slackToken, slackChannel, githubToken, updateMessageTemplate);
