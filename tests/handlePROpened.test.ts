@@ -1,7 +1,20 @@
 import * as github from '@actions/github';
 import { handlePROpened } from '../src/handlePROpened';
+import { fetchAllCommits, Commit } from '../src/utils/fetchAllCommits';
 
 jest.mock('@actions/github');
+jest.mock('../src/utils/fetchAllCommits');
+
+// Mock fetch globally
+global.fetch = jest.fn(async (url) => {
+  if (url === 'https://slack.com/api/chat.postMessage') {
+    return {
+      ok: true,
+      json: async () => ({ ok: true, ts: '12345' }),
+    } as Response;
+  }
+  throw new Error('Unexpected URL');
+}) as jest.Mock;
 
 describe('handlePROpened', () => {
   const slackToken = 'slack-token';
@@ -12,31 +25,47 @@ describe('handlePROpened', () => {
     'Commits:\n${commitListMessage}\nCompare changes: ${changelogUrl}';
   const githubToSlackMap = { githubUser: 'slackUser' };
 
+  const contextPayload = {
+    payload: {
+      pull_request: {
+        title: 'Test PR',
+        html_url: 'http://example.com',
+        head: { ref: 'feature-branch' },
+        base: { ref: 'main' },
+        number: 1,
+        body: 'PR body',
+        commits_url: 'http://api.github.com/commits',
+      },
+    },
+    repo: {
+      owner: 'owner',
+      repo: 'repo',
+    },
+  };
+
+  const mockCommitsData: Commit[] = [
+    {
+      sha: 'commit1',
+      commit: {
+        message: 'Initial commit\nwith newline',
+        author: { name: 'author1' },
+      },
+      author: { login: 'githubUser' },
+    },
+  ];
+
   beforeEach(() => {
     jest.clearAllMocks();
 
     Object.defineProperty(github.context, 'payload', {
-      value: {
-        pull_request: {
-          title: 'Test PR',
-          html_url: 'http://example.com',
-          head: { ref: 'feature-branch' },
-          base: { ref: 'main' },
-          number: 1,
-          body: 'PR body',
-          commits_url: 'http://api.github.com/commits',
-        },
-      },
-      writable: true,
+      value: contextPayload.payload,
     });
 
     Object.defineProperty(github.context, 'repo', {
-      value: {
-        owner: 'owner',
-        repo: 'repo',
-      },
-      writable: true,
+      value: contextPayload.repo,
     });
+
+    (fetchAllCommits as jest.Mock).mockResolvedValue(mockCommitsData);
   });
 
   it('sends initial Slack message and updates PR body', async () => {
@@ -48,24 +77,7 @@ describe('handlePROpened', () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(initialSlackResponse)))
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify([
-            {
-              sha: 'commit1',
-              commit: {
-                message: 'Initial commit',
-                author: {
-                  name: 'author1',
-                },
-              },
-              author: {
-                login: 'githubUser',
-              },
-            },
-          ])
-        )
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify(mockCommitsData)))
       .mockResolvedValueOnce(
         new Response(JSON.stringify(initialSlackResponse))
       );
@@ -136,24 +148,7 @@ describe('handlePROpened', () => {
     global.fetch = jest
       .fn()
       .mockResolvedValueOnce(new Response(JSON.stringify(initialSlackResponse)))
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify([
-            {
-              sha: 'commit1',
-              commit: {
-                message: 'Initial commit\nwith newline',
-                author: {
-                  name: 'author1',
-                },
-              },
-              author: {
-                login: 'githubUser',
-              },
-            },
-          ])
-        )
-      )
+      .mockResolvedValueOnce(new Response(JSON.stringify(mockCommitsData)))
       .mockResolvedValueOnce(
         new Response(JSON.stringify(initialSlackResponse))
       );

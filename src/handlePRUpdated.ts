@@ -1,5 +1,13 @@
 import * as github from '@actions/github';
+import { fetchAllCommits, Commit } from './utils/fetchAllCommits';
 
+/**
+ * Handles the event when a pull request is updated with new commits.
+ * @param slackToken - Slack bot token.
+ * @param slackChannel - Slack channel ID.
+ * @param githubToken - GitHub token.
+ * @param updateMessageTemplate - Template for the update Slack message.
+ */
 export async function handlePRUpdated(
   slackToken: string,
   slackChannel: string,
@@ -11,6 +19,7 @@ export async function handlePRUpdated(
     throw new Error('No pull request found');
   }
 
+  // Extract the Slack message timestamp from the pull request body
   const prBody = pr.body || '';
   const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
   const messageTs = messageTsMatch ? messageTsMatch[1] : null;
@@ -19,41 +28,34 @@ export async function handlePRUpdated(
     throw new Error('No Slack message_ts found in pull request description');
   }
 
-  const commitsUrl = pr.commits_url;
-  const commitsResponse = await fetch(commitsUrl, {
-    headers: {
-      Authorization: `token ${githubToken}`,
-    },
-  });
-
-  if (!commitsResponse.ok) {
-    const errorData = await commitsResponse.json();
-    throw new Error(
-      `GitHub API request failed: ${commitsResponse.status} ${
-        commitsResponse.statusText
-      } - ${JSON.stringify(errorData)}`
-    );
-  }
-
-  const commitsData = await commitsResponse.json();
-  const repoUrl = `https://github.com/${github.context.repo.owner}/${github.context.repo.repo}`;
+  // Fetch all commits for the pull request
+  const { owner, repo } = github.context.repo;
+  const commitsData: Commit[] = await fetchAllCommits(
+    owner,
+    repo,
+    pr.number,
+    githubToken
+  );
   const latestCommit = commitsData[commitsData.length - 1];
 
   if (!latestCommit) {
     throw new Error('No commits found');
   }
 
+  // Extract details of the latest commit
   const commitMessage = latestCommit.commit.message;
   const commitSha = latestCommit.sha;
-  const commitUrl = `${repoUrl}/commit/${commitSha}`;
+  const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
   const githubUser =
     latestCommit.author?.login || latestCommit.commit.author.name;
 
+  // Format the update Slack message
   const updateMessage = updateMessageTemplate
     .replace('${commitUrl}', commitUrl)
     .replace('${commitMessage}', commitMessage)
     .replace('${githubUser}', githubUser);
 
+  // Send the update message to Slack in the same thread as the initial message
   const slackResponse = await fetch('https://slack.com/api/chat.postMessage', {
     method: 'POST',
     headers: {
