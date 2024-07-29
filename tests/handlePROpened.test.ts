@@ -127,7 +127,7 @@ describe('handlePROpened', () => {
       expect.objectContaining({
         body: JSON.stringify({
           channel: slackChannelId,
-          text: 'Commits:\n- <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
+          text: 'Commits:\n• <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
           thread_ts: '12345',
         }),
         headers: {
@@ -176,7 +176,7 @@ describe('handlePROpened', () => {
       expect.objectContaining({
         body: JSON.stringify({
           channel: slackChannelId,
-          text: 'Commits:\n- <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
+          text: 'Commits:\n• <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
           thread_ts: '12345',
         }),
         headers: {

@@ -29374,7 +29374,7 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
             const userDisplay = slackUserId
                 ? `<@${slackUserId}>`
                 : `@${githubUser}`;
-            const commitEntry = `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+            const commitEntry = `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
             const scopeMatch = commitMessage.match(/^\w+\(([\w,]+)\):/);
             const scopes = scopeMatch ? scopeMatch[1].split(',') : ['other'];
             const type = commitMessage.split('(')[0].trim();
@@ -29416,7 +29416,7 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
             const userDisplay = slackUserId
                 ? `<@${slackUserId}>`
                 : `@${githubUser}`;
-            return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+            return `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
         })
             .join('\n');
     }
