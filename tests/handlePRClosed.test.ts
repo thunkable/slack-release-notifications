@@ -33,7 +33,7 @@ describe('handlePRClosed', () => {
   it('should send a message to Slack when PR is closed and merged', async () => {
     await handlePRClosed(
       'slackToken',
-      'slackChannel',
+      'slackChannelId',
       'PR ${prTitle} was closed by ${mergedBy}'
     );
 
@@ -46,7 +46,7 @@ describe('handlePRClosed', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          channel: 'slackChannel',
+          channel: 'slackChannelId',
           text: 'PR Test PR was closed by user',
           thread_ts: '12345.67890',
         }),
@@ -62,7 +62,7 @@ describe('handlePRClosed', () => {
 
     await handlePRClosed(
       'slackToken',
-      'slackChannel',
+      'slackChannelId',
       'PR ${prTitle} was closed by ${mergedBy}'
     );
 

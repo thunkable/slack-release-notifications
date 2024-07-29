@@ -4,7 +4,7 @@ import { fetchAllCommits, Commit } from './utils/fetchAllCommits';
 /**
  * Handles the event when a pull request is opened.
  * @param slackToken - Slack bot token.
- * @param slackChannel - Slack channel ID.
+ * @param slackChannelId - Slack channel ID.
  * @param githubToken - GitHub token.
  * @param initialMessageTemplate - Template for the initial Slack message.
  * @param commitListMessageTemplate - Template for the commit list Slack message.
@@ -13,7 +13,7 @@ import { fetchAllCommits, Commit } from './utils/fetchAllCommits';
  */
 export async function handlePROpened(
   slackToken: string,
-  slackChannel: string,
+  slackChannelId: string,
   githubToken: string,
   initialMessageTemplate: string,
   commitListMessageTemplate: string,
@@ -50,7 +50,7 @@ export async function handlePROpened(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        channel: slackChannel,
+        channel: slackChannelId,
         text: initialMessage,
       }),
     }
@@ -62,10 +62,10 @@ export async function handlePROpened(
     throw new Error('Failed to send initial Slack message');
   }
 
-  const messageTs = initialMessageData.ts;
+  const messageTimestamp = initialMessageData.ts;
 
   // Update the pull request body with the Slack message timestamp
-  const newPrBody = `Slack message_ts: ${messageTs}\n\n${prBody}`;
+  const newPrBody = `Slack message_ts: ${messageTimestamp}\n\n${prBody}`;
   const octokit = github.getOctokit(githubToken);
   await octokit.rest.pulls.update({
     ...github.context.repo,
@@ -125,7 +125,8 @@ export async function handlePROpened(
             .map((type) => categorizedCommits[scope][type].sort().join('\n'))
             .join('\n')
       )
-      .join('\n\n');
+      .join('\n\n')
+      .replace(/^\s*$(?:\r\n?|\n)/gm, ''); // Remove empty lines
   } else {
     commitMessages = commitsData
       .map((commit: Commit) => {
@@ -178,9 +179,9 @@ export async function handlePROpened(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          channel: slackChannel,
+          channel: slackChannelId,
           text: text,
-          thread_ts: messageTs,
+          thread_ts: messageTimestamp,
         }),
       });
     }
@@ -201,9 +202,9 @@ export async function handlePROpened(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        channel: slackChannel,
+        channel: slackChannelId,
         text: commitListMessage,
-        thread_ts: messageTs,
+        thread_ts: messageTimestamp,
       }),
     });
   }

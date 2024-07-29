@@ -59,7 +59,7 @@ describe('handlePRUpdated', () => {
   it('should send an update message to Slack with the latest commit', async () => {
     await handlePRUpdated(
       'slackToken',
-      'slackChannel',
+      'slackChannelId',
       'githubToken',
       'Updated commit: ${commitMessage} by ${githubUser}'
     );
@@ -80,7 +80,7 @@ describe('handlePRUpdated', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          channel: 'slackChannel',
+          channel: 'slackChannelId',
           text: 'Updated commit: Second commit by githubUser2',
           thread_ts: '12345.67890',
         }),
@@ -96,7 +96,7 @@ describe('handlePRUpdated', () => {
     await expect(
       handlePRUpdated(
         'slackToken',
-        'slackChannel',
+        'slackChannelId',
         'githubToken',
         'Updated commit: ${commitMessage} by ${githubUser}'
       )
@@ -111,7 +111,7 @@ describe('handlePRUpdated', () => {
     await expect(
       handlePRUpdated(
         'slackToken',
-        'slackChannel',
+        'slackChannelId',
         'githubToken',
         'Updated commit: ${commitMessage} by ${githubUser}'
       )
@@ -128,7 +128,7 @@ describe('handlePRUpdated', () => {
     await expect(
       handlePRUpdated(
         'slackToken',
-        'slackChannel',
+        'slackChannelId',
         'githubToken',
         'Updated commit: ${commitMessage} by ${githubUser}'
       )
@@ -150,7 +150,7 @@ describe('handlePRUpdated', () => {
     await expect(
       handlePRUpdated(
         'slackToken',
-        'slackChannel',
+        'slackChannelId',
         'githubToken',
         'Updated commit: ${commitMessage} by ${githubUser}'
       )

@@ -35,51 +35,51 @@ describe('fetchAllCommits', () => {
     },
   ];
 
+  (global.fetch as jest.Mock)
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockCommitsData,
+      headers: {
+        get: () => '<https://api.github.com/page2>; rel="next"',
+      },
+      status: 200,
+      statusText: 'OK',
+      redirected: false,
+      type: 'basic',
+      url: 'https://api.github.com/repos/owner/repo/pulls/1/commits?per_page=100',
+      body: null,
+      bodyUsed: false,
+      clone: jest.fn(),
+      text: jest.fn(),
+      arrayBuffer: jest.fn(),
+      blob: jest.fn(),
+      formData: jest.fn(),
+    } as unknown as Response)
+    .mockResolvedValueOnce({
+      ok: true,
+      json: async () => [],
+      headers: {
+        get: () => null,
+      },
+      status: 200,
+      statusText: 'OK',
+      redirected: false,
+      type: 'basic',
+      url: 'https://api.github.com/page2',
+      body: null,
+      bodyUsed: false,
+      clone: jest.fn(),
+      text: jest.fn(),
+      arrayBuffer: jest.fn(),
+      blob: jest.fn(),
+      formData: jest.fn(),
+    } as unknown as Response);
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('fetches all commits successfully with pagination', async () => {
-    (global.fetch as jest.Mock)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockCommitsData,
-        headers: {
-          get: () => '<https://api.github.com/page2>; rel="next"',
-        },
-        status: 200,
-        statusText: 'OK',
-        redirected: false,
-        type: 'basic',
-        url: 'https://api.github.com/repos/owner/repo/pulls/1/commits?per_page=100',
-        body: null,
-        bodyUsed: false,
-        clone: jest.fn(),
-        text: jest.fn(),
-        arrayBuffer: jest.fn(),
-        blob: jest.fn(),
-        formData: jest.fn(),
-      } as unknown as Response)
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => [],
-        headers: {
-          get: () => null,
-        },
-        status: 200,
-        statusText: 'OK',
-        redirected: false,
-        type: 'basic',
-        url: 'https://api.github.com/page2',
-        body: null,
-        bodyUsed: false,
-        clone: jest.fn(),
-        text: jest.fn(),
-        arrayBuffer: jest.fn(),
-        blob: jest.fn(),
-        formData: jest.fn(),
-      } as unknown as Response);
-
     const commits = await fetchAllCommits(owner, repo, pullNumber, githubToken);
 
     expect(commits).toEqual(mockCommitsData);

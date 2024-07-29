@@ -7,7 +7,7 @@ import { handlePRClosed } from './handlePRClosed';
 async function run() {
   try {
     const slackToken = core.getInput('slack-bot-token');
-    const slackChannel = core.getInput('slack-channel');
+    const slackChannelId = core.getInput('slack-channel-id');
     const githubToken = core.getInput('github-token');
     const initialMessageTemplate = core.getInput('initial-message-template');
     const updateMessageTemplate = core.getInput('update-message-template');
@@ -27,7 +27,7 @@ async function run() {
       case 'opened':
         await handlePROpened(
           slackToken,
-          slackChannel,
+          slackChannelId,
           githubToken,
           initialMessageTemplate,
           commitListMessageTemplate,
@@ -38,13 +38,13 @@ async function run() {
       case 'synchronize':
         await handlePRUpdated(
           slackToken,
-          slackChannel,
+          slackChannelId,
           githubToken,
           updateMessageTemplate
         );
         break;
       case 'closed':
-        await handlePRClosed(slackToken, slackChannel, closeMessageTemplate);
+        await handlePRClosed(slackToken, slackChannelId, closeMessageTemplate);
         break;
       default:
         throw new Error('Unsupported pull request event action');

@@ -4,13 +4,13 @@ import { fetchAllCommits, Commit } from './utils/fetchAllCommits';
 /**
  * Handles the event when a pull request is updated with new commits.
  * @param slackToken - Slack bot token.
- * @param slackChannel - Slack channel ID.
+ * @param slackChannelId - Slack channel ID.
  * @param githubToken - GitHub token.
  * @param updateMessageTemplate - Template for the update Slack message.
  */
 export async function handlePRUpdated(
   slackToken: string,
-  slackChannel: string,
+  slackChannelId: string,
   githubToken: string,
   updateMessageTemplate: string
 ) {
@@ -21,10 +21,12 @@ export async function handlePRUpdated(
 
   // Extract the Slack message timestamp from the pull request body
   const prBody = pr.body || '';
-  const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
-  const messageTs = messageTsMatch ? messageTsMatch[1] : null;
+  const messageTimestampMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
+  const messageTimestamp = messageTimestampMatch
+    ? messageTimestampMatch[1]
+    : null;
 
-  if (!messageTs) {
+  if (!messageTimestamp) {
     throw new Error('No Slack message_ts found in pull request description');
   }
 
@@ -63,9 +65,9 @@ export async function handlePRUpdated(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      channel: slackChannel,
+      channel: slackChannelId,
       text: updateMessage,
-      thread_ts: messageTs,
+      thread_ts: messageTimestamp,
     }),
   });
 

@@ -29222,10 +29222,10 @@ const github = __importStar(__nccwpck_require__(5438));
 /**
  * Handles the event when a pull request is closed.
  * @param slackToken - Slack bot token.
- * @param slackChannel - Slack channel ID.
+ * @param slackChannelId - Slack channel ID.
  * @param closeMessageTemplate - Template for the close Slack message.
  */
-async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
+async function handlePRClosed(slackToken, slackChannelId, closeMessageTemplate) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -29237,11 +29237,12 @@ async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
     const prTitle = pr.title;
     const prUrl = pr.html_url || '';
     const mergedBy = pr.merged_by.login;
-    // Extract the Slack message timestamp from the pull request body
     const prBody = pr.body || '';
-    const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
-    const messageTs = messageTsMatch ? messageTsMatch[1] : null;
-    if (!messageTs) {
+    const messageTimestampMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
+    const messageTimestamp = messageTimestampMatch
+        ? messageTimestampMatch[1]
+        : null;
+    if (!messageTimestamp) {
         throw new Error('No Slack message_ts found in pull request description');
     }
     const closeMessage = closeMessageTemplate
@@ -29256,9 +29257,9 @@ async function handlePRClosed(slackToken, slackChannel, closeMessageTemplate) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            channel: slackChannel,
+            channel: slackChannelId,
             text: closeMessage,
-            thread_ts: messageTs,
+            thread_ts: messageTimestamp,
         }),
     });
     if (!response.ok) {
@@ -29306,14 +29307,14 @@ const fetchAllCommits_1 = __nccwpck_require__(2857);
 /**
  * Handles the event when a pull request is opened.
  * @param slackToken - Slack bot token.
- * @param slackChannel - Slack channel ID.
+ * @param slackChannelId - Slack channel ID.
  * @param githubToken - GitHub token.
  * @param initialMessageTemplate - Template for the initial Slack message.
  * @param commitListMessageTemplate - Template for the commit list Slack message.
  * @param githubToSlackMap - Optional mapping of GitHub usernames to Slack user IDs.
  * @param sortCommits - Flag to sort commits by types and scopes.
  */
-async function handlePROpened(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap, sortCommits = false) {
+async function handlePROpened(slackToken, slackChannelId, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMap, sortCommits = false) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
@@ -29339,7 +29340,7 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            channel: slackChannel,
+            channel: slackChannelId,
             text: initialMessage,
         }),
     });
@@ -29347,9 +29348,9 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
     if (!initialMessageData.ok) {
         throw new Error('Failed to send initial Slack message');
     }
-    const messageTs = initialMessageData.ts;
+    const messageTimestamp = initialMessageData.ts;
     // Update the pull request body with the Slack message timestamp
-    const newPrBody = `Slack message_ts: ${messageTs}\n\n${prBody}`;
+    const newPrBody = `Slack message_ts: ${messageTimestamp}\n\n${prBody}`;
     const octokit = github.getOctokit(githubToken);
     await octokit.rest.pulls.update({
         ...github.context.repo,
@@ -29399,7 +29400,8 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
                 .sort()
                 .map((type) => categorizedCommits[scope][type].sort().join('\n'))
                 .join('\n'))
-            .join('\n\n');
+            .join('\n\n')
+            .replace(/^\s*$(?:\r\n?|\n)/gm, ''); // Remove empty lines
     }
     else {
         commitMessages = commitsData
@@ -29448,9 +29450,9 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    channel: slackChannel,
+                    channel: slackChannelId,
                     text: text,
-                    thread_ts: messageTs,
+                    thread_ts: messageTimestamp,
                 }),
             });
         }
@@ -29471,9 +29473,9 @@ async function handlePROpened(slackToken, slackChannel, githubToken, initialMess
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                channel: slackChannel,
+                channel: slackChannelId,
                 text: commitListMessage,
-                thread_ts: messageTs,
+                thread_ts: messageTimestamp,
             }),
         });
     }
@@ -29518,20 +29520,22 @@ const fetchAllCommits_1 = __nccwpck_require__(2857);
 /**
  * Handles the event when a pull request is updated with new commits.
  * @param slackToken - Slack bot token.
- * @param slackChannel - Slack channel ID.
+ * @param slackChannelId - Slack channel ID.
  * @param githubToken - GitHub token.
  * @param updateMessageTemplate - Template for the update Slack message.
  */
-async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMessageTemplate) {
+async function handlePRUpdated(slackToken, slackChannelId, githubToken, updateMessageTemplate) {
     const pr = github.context.payload.pull_request;
     if (!pr) {
         throw new Error('No pull request found');
     }
     // Extract the Slack message timestamp from the pull request body
     const prBody = pr.body || '';
-    const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
-    const messageTs = messageTsMatch ? messageTsMatch[1] : null;
-    if (!messageTs) {
+    const messageTimestampMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
+    const messageTimestamp = messageTimestampMatch
+        ? messageTimestampMatch[1]
+        : null;
+    if (!messageTimestamp) {
         throw new Error('No Slack message_ts found in pull request description');
     }
     // Fetch all commits for the pull request
@@ -29559,9 +29563,9 @@ async function handlePRUpdated(slackToken, slackChannel, githubToken, updateMess
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            channel: slackChannel,
+            channel: slackChannelId,
             text: updateMessage,
-            thread_ts: messageTs,
+            thread_ts: messageTimestamp,
         }),
     });
     if (!slackResponse.ok) {
@@ -29611,7 +29615,7 @@ const handlePRClosed_1 = __nccwpck_require__(3828);
 async function run() {
     try {
         const slackToken = core.getInput('slack-bot-token');
-        const slackChannel = core.getInput('slack-channel');
+        const slackChannelId = core.getInput('slack-channel-id');
         const githubToken = core.getInput('github-token');
         const initialMessageTemplate = core.getInput('initial-message-template');
         const updateMessageTemplate = core.getInput('update-message-template');
@@ -29625,13 +29629,13 @@ async function run() {
         const action = github.context.payload.action;
         switch (action) {
             case 'opened':
-                await (0, handlePROpened_1.handlePROpened)(slackToken, slackChannel, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMapParsed, sortCommits);
+                await (0, handlePROpened_1.handlePROpened)(slackToken, slackChannelId, githubToken, initialMessageTemplate, commitListMessageTemplate, githubToSlackMapParsed, sortCommits);
                 break;
             case 'synchronize':
-                await (0, handlePRUpdated_1.handlePRUpdated)(slackToken, slackChannel, githubToken, updateMessageTemplate);
+                await (0, handlePRUpdated_1.handlePRUpdated)(slackToken, slackChannelId, githubToken, updateMessageTemplate);
                 break;
             case 'closed':
-                await (0, handlePRClosed_1.handlePRClosed)(slackToken, slackChannel, closeMessageTemplate);
+                await (0, handlePRClosed_1.handlePRClosed)(slackToken, slackChannelId, closeMessageTemplate);
                 break;
             default:
                 throw new Error('Unsupported pull request event action');
