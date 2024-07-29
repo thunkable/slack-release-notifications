@@ -3,12 +3,12 @@ import * as github from '@actions/github';
 /**
  * Handles the event when a pull request is closed.
  * @param slackToken - Slack bot token.
- * @param slackChannel - Slack channel ID.
+ * @param slackChannelId - Slack channel ID.
  * @param closeMessageTemplate - Template for the close Slack message.
  */
 export async function handlePRClosed(
   slackToken: string,
-  slackChannel: string,
+  slackChannelId: string,
   closeMessageTemplate: string
 ) {
   const pr = github.context.payload.pull_request;
@@ -27,12 +27,13 @@ export async function handlePRClosed(
   const prUrl = pr.html_url || '';
   const mergedBy = pr.merged_by.login;
 
-  // Extract the Slack message timestamp from the pull request body
   const prBody = pr.body || '';
-  const messageTsMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
-  const messageTs = messageTsMatch ? messageTsMatch[1] : null;
+  const messageTimestampMatch = prBody.match(/Slack message_ts: (\d+\.\d+)/);
+  const messageTimestamp = messageTimestampMatch
+    ? messageTimestampMatch[1]
+    : null;
 
-  if (!messageTs) {
+  if (!messageTimestamp) {
     throw new Error('No Slack message_ts found in pull request description');
   }
 
@@ -49,9 +50,9 @@ export async function handlePRClosed(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      channel: slackChannel,
+      channel: slackChannelId,
       text: closeMessage,
-      thread_ts: messageTs,
+      thread_ts: messageTimestamp,
     }),
   });
 

@@ -4,19 +4,21 @@ import { fetchAllCommits, Commit } from './utils/fetchAllCommits';
 /**
  * Handles the event when a pull request is opened.
  * @param slackToken - Slack bot token.
- * @param slackChannel - Slack channel ID.
+ * @param slackChannelId - Slack channel ID.
  * @param githubToken - GitHub token.
  * @param initialMessageTemplate - Template for the initial Slack message.
  * @param commitListMessageTemplate - Template for the commit list Slack message.
  * @param githubToSlackMap - Optional mapping of GitHub usernames to Slack user IDs.
+ * @param sortCommits - Flag to sort commits by types and scopes.
  */
 export async function handlePROpened(
   slackToken: string,
-  slackChannel: string,
+  slackChannelId: string,
   githubToken: string,
   initialMessageTemplate: string,
   commitListMessageTemplate: string,
-  githubToSlackMap?: Record<string, string>
+  githubToSlackMap?: Record<string, string>,
+  sortCommits: boolean = false
 ) {
   const pr = github.context.payload.pull_request;
   if (!pr) {
@@ -48,7 +50,7 @@ export async function handlePROpened(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        channel: slackChannel,
+        channel: slackChannelId,
         text: initialMessage,
       }),
     }
@@ -60,10 +62,10 @@ export async function handlePROpened(
     throw new Error('Failed to send initial Slack message');
   }
 
-  const messageTs = initialMessageData.ts;
+  const messageTimestamp = initialMessageData.ts;
 
   // Update the pull request body with the Slack message timestamp
-  const newPrBody = `Slack message_ts: ${messageTs}\n\n${prBody}`;
+  const newPrBody = `Slack message_ts: ${messageTimestamp}\n\n${prBody}`;
   const octokit = github.getOctokit(githubToken);
   await octokit.rest.pulls.update({
     ...github.context.repo,
@@ -75,23 +77,77 @@ export async function handlePROpened(
   const { owner, repo } = github.context.repo;
   const commitsData = await fetchAllCommits(owner, repo, prNumber, githubToken);
 
-  const repoUrl = `https://github.com/${owner}/${repo}`;
-  // Format the commit messages
-  let commitMessages = commitsData
-    .map((commit: Commit) => {
-      const commitMessage = commit.commit.message.split('\n')[0];
-      const commitSha = commit.sha;
-      const commitUrl = `${repoUrl}/commit/${commitSha}`;
-      const githubUser = commit.author?.login || commit.commit.author.name;
-      const slackUserId = githubToSlackMap
-        ? githubToSlackMap[githubUser]
-        : null;
-      const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
-      return `- <${commitUrl}|${commitMessage}> by ${userDisplay}`;
-    })
-    .join('\n');
+  let commitMessages: string;
+  if (sortCommits) {
+    // Categorize commits by scopes and sort them alphabetically by type
+    const categorizedCommits: Record<string, { [type: string]: string[] }> =
+      commitsData.reduce((acc, commit) => {
+        const commitMessage = commit.commit.message.split('\n')[0];
+        const commitSha = commit.sha;
+        const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
+        const githubUser = commit.author?.login || commit.commit.author.name;
+        const slackUserId = githubToSlackMap
+          ? githubToSlackMap[githubUser]
+          : null;
+        const userDisplay = slackUserId
+          ? `<@${slackUserId}>`
+          : `@${githubUser}`;
+        const commitEntry = `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
 
+        const scopeMatch = commitMessage.match(/^\w+\(([\w,]+)\):/);
+        const scopes = scopeMatch ? scopeMatch[1].split(',') : ['other'];
+        const type = commitMessage.split('(')[0].trim();
+
+        scopes.forEach((scope, index) => {
+          const key = scope.trim();
+          if (!acc[key]) {
+            acc[key] = {};
+          }
+          if (!acc[key][type]) {
+            acc[key][type] = [];
+          }
+          if (index === 0) {
+            acc[key][type].push(commitEntry);
+          }
+        });
+
+        return acc;
+      }, {} as Record<string, { [type: string]: string[] }>);
+
+    // Format commit messages
+    commitMessages = Object.keys(categorizedCommits)
+      .sort()
+      .map(
+        (scope) =>
+          `*${scope.charAt(0).toUpperCase() + scope.slice(1)}*\n` +
+          Object.keys(categorizedCommits[scope])
+            .sort()
+            .map((type) => categorizedCommits[scope][type].sort().join('\n'))
+            .join('\n')
+      )
+      .join('\n\n')
+      .replace(/^\s*$(?:\r\n?|\n)/gm, ''); // Remove empty lines
+  } else {
+    commitMessages = commitsData
+      .map((commit: Commit) => {
+        const commitMessage = commit.commit.message.split('\n')[0];
+        const commitSha = commit.sha;
+        const commitUrl = `https://github.com/${owner}/${repo}/commit/${commitSha}`;
+        const githubUser = commit.author?.login || commit.commit.author.name;
+        const slackUserId = githubToSlackMap
+          ? githubToSlackMap[githubUser]
+          : null;
+        const userDisplay = slackUserId
+          ? `<@${slackUserId}>`
+          : `@${githubUser}`;
+        return `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+      })
+      .join('\n');
+  }
+
+  const repoUrl = `https://github.com/${owner}/${repo}`;
   // Handle Slack message length limits
+
   if (commitMessages.length > 4000) {
     const commitMessagesArr = [];
     let chunk = '';
@@ -109,9 +165,9 @@ export async function handlePROpened(
       commitMessagesArr.push(chunk.trim());
     }
 
-    // Send multiple messages if necessary
     for (let i = 0; i < commitMessagesArr.length; i++) {
       let text = commitMessagesArr[i];
+
       if (i === commitMessagesArr.length - 1) {
         text = `${text}\n\n<${repoUrl}/compare/${targetBranch}...${branchName}|Full Changelog: ${branchName} to ${targetBranch}>`;
       }
@@ -123,9 +179,9 @@ export async function handlePROpened(
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          channel: slackChannel,
+          channel: slackChannelId,
           text: text,
-          thread_ts: messageTs,
+          thread_ts: messageTimestamp,
         }),
       });
     }
@@ -146,9 +202,9 @@ export async function handlePROpened(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        channel: slackChannel,
+        channel: slackChannelId,
         text: commitListMessage,
-        thread_ts: messageTs,
+        thread_ts: messageTimestamp,
       }),
     });
   }

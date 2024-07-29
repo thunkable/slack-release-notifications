@@ -18,7 +18,7 @@ global.fetch = jest.fn(async (url) => {
 
 describe('handlePROpened', () => {
   const slackToken = 'slack-token';
-  const slackChannel = 'slack-channel';
+  const slackChannelId = 'slack-channel-id';
   const githubToken = 'github-token';
   const initialMessageTemplate = 'PR opened: ${prUrl} - ${prTitle}';
   const commitListMessageTemplate =
@@ -93,7 +93,7 @@ describe('handlePROpened', () => {
 
     await handlePROpened(
       slackToken,
-      slackChannel,
+      slackChannelId,
       githubToken,
       initialMessageTemplate,
       commitListMessageTemplate,
@@ -104,7 +104,7 @@ describe('handlePROpened', () => {
       'https://slack.com/api/chat.postMessage',
       expect.objectContaining({
         body: JSON.stringify({
-          channel: slackChannel,
+          channel: slackChannelId,
           text: 'PR opened: http://example.com - Test PR',
         }),
         headers: {
@@ -126,8 +126,8 @@ describe('handlePROpened', () => {
       'https://slack.com/api/chat.postMessage',
       expect.objectContaining({
         body: JSON.stringify({
-          channel: slackChannel,
-          text: 'Commits:\n- <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
+          channel: slackChannelId,
+          text: 'Commits:\n• <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
           thread_ts: '12345',
         }),
         headers: {
@@ -164,7 +164,7 @@ describe('handlePROpened', () => {
 
     await handlePROpened(
       slackToken,
-      slackChannel,
+      slackChannelId,
       githubToken,
       initialMessageTemplate,
       commitListMessageTemplate,
@@ -175,8 +175,8 @@ describe('handlePROpened', () => {
       'https://slack.com/api/chat.postMessage',
       expect.objectContaining({
         body: JSON.stringify({
-          channel: slackChannel,
-          text: 'Commits:\n- <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
+          channel: slackChannelId,
+          text: 'Commits:\n• <https://github.com/owner/repo/commit/commit1|Initial commit> by <@slackUser>\nCompare changes: https://github.com/owner/repo/compare/main...feature-branch',
           thread_ts: '12345',
         }),
         headers: {
@@ -197,7 +197,7 @@ describe('handlePROpened', () => {
     await expect(
       handlePROpened(
         slackToken,
-        slackChannel,
+        slackChannelId,
         githubToken,
         initialMessageTemplate,
         commitListMessageTemplate,
@@ -219,7 +219,7 @@ describe('handlePROpened', () => {
     await expect(
       handlePROpened(
         slackToken,
-        slackChannel,
+        slackChannelId,
         githubToken,
         initialMessageTemplate,
         commitListMessageTemplate,

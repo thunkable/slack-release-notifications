@@ -7,7 +7,7 @@ import { handlePRClosed } from './handlePRClosed';
 async function run() {
   try {
     const slackToken = core.getInput('slack-bot-token');
-    const slackChannel = core.getInput('slack-channel');
+    const slackChannelId = core.getInput('slack-channel-id');
     const githubToken = core.getInput('github-token');
     const initialMessageTemplate = core.getInput('initial-message-template');
     const updateMessageTemplate = core.getInput('update-message-template');
@@ -16,6 +16,7 @@ async function run() {
       'commit-list-message-template'
     );
     const githubToSlackMap = core.getInput('github-to-slack-map');
+    const sortCommits = core.getInput('sort-commits') === 'true';
     const githubToSlackMapParsed = githubToSlackMap
       ? JSON.parse(githubToSlackMap)
       : undefined;
@@ -26,23 +27,24 @@ async function run() {
       case 'opened':
         await handlePROpened(
           slackToken,
-          slackChannel,
+          slackChannelId,
           githubToken,
           initialMessageTemplate,
           commitListMessageTemplate,
-          githubToSlackMapParsed
+          githubToSlackMapParsed,
+          sortCommits
         );
         break;
       case 'synchronize':
         await handlePRUpdated(
           slackToken,
-          slackChannel,
+          slackChannelId,
           githubToken,
           updateMessageTemplate
         );
         break;
       case 'closed':
-        await handlePRClosed(slackToken, slackChannel, closeMessageTemplate);
+        await handlePRClosed(slackToken, slackChannelId, closeMessageTemplate);
         break;
       default:
         throw new Error('Unsupported pull request event action');
