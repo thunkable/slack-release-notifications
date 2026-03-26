@@ -1,3 +1,4 @@
+import * as core from "@actions/core";
 import * as github from "@actions/github";
 import { fetchAllCommits, Commit } from "./utils/fetchAllCommits";
 import { buildSortedCommitBlocks, chunkBlocks } from "./utils/buildSlackBlocks";
@@ -129,6 +130,7 @@ export async function handlePROpened(
     throw new Error("Failed to send initial Slack message");
   }
 
+  core.info("Initial Slack message sent successfully");
   const messageTimestamp = initialMessageData.ts;
 
   // Update the pull request body with the Slack message timestamp
@@ -146,6 +148,9 @@ export async function handlePROpened(
 
   // Filter out merge commits
   const commitsData = filterMergeCommits(allCommits);
+  core.info(
+    `Fetched ${allCommits.length} commits, ${commitsData.length} after filtering merge commits`,
+  );
 
   // Handle edge case: all commits filtered out
   if (commitsData.length === 0) {
@@ -197,6 +202,10 @@ export async function handlePROpened(
           } commits`,
       )
       .join(", ");
+
+    core.info(
+      `Built ${blocks.length} blocks in ${blockChunks.length} chunk(s). Scopes: ${Object.keys(categorizedCommits).sort().join(", ")}`,
+    );
 
     for (const chunk of blockChunks) {
       await fetch("https://slack.com/api/chat.postMessage", {

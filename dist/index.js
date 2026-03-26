@@ -29302,6 +29302,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.handlePROpened = exports.categorizeCommits = exports.filterMergeCommits = void 0;
+const core = __importStar(__nccwpck_require__(2186));
 const github = __importStar(__nccwpck_require__(5438));
 const fetchAllCommits_1 = __nccwpck_require__(2857);
 const buildSlackBlocks_1 = __nccwpck_require__(6529);
@@ -29395,6 +29396,7 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
     if (!initialMessageData.ok) {
         throw new Error("Failed to send initial Slack message");
     }
+    core.info("Initial Slack message sent successfully");
     const messageTimestamp = initialMessageData.ts;
     // Update the pull request body with the Slack message timestamp
     const newPrBody = `Slack message_ts: ${messageTimestamp}\n\n${prBody}`;
@@ -29409,6 +29411,7 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
     const allCommits = await (0, fetchAllCommits_1.fetchAllCommits)(owner, repo, prNumber, githubToken);
     // Filter out merge commits
     const commitsData = filterMergeCommits(allCommits);
+    core.info(`Fetched ${allCommits.length} commits, ${commitsData.length} after filtering merge commits`);
     // Handle edge case: all commits filtered out
     if (commitsData.length === 0) {
         await fetch("https://slack.com/api/chat.postMessage", {
@@ -29439,6 +29442,7 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
             .sort()
             .map((scope) => `${scope.charAt(0).toUpperCase() + scope.slice(1)}: ${Object.values(categorizedCommits[scope]).flat().length} commits`)
             .join(", ");
+        core.info(`Built ${blocks.length} blocks in ${blockChunks.length} chunk(s). Scopes: ${Object.keys(categorizedCommits).sort().join(", ")}`);
         for (const chunk of blockChunks) {
             await fetch("https://slack.com/api/chat.postMessage", {
                 method: "POST",
