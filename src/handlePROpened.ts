@@ -130,7 +130,9 @@ export async function handlePROpened(
     throw new Error("Failed to send initial Slack message");
   }
 
-  core.info("Initial Slack message sent successfully");
+  core.info(
+    `Initial Slack message sent successfully. ts=${initialMessageData.ts}, channel=${initialMessageData.channel}`,
+  );
   const messageTimestamp = initialMessageData.ts;
 
   // Update the pull request body with the Slack message timestamp
@@ -230,7 +232,9 @@ export async function handlePROpened(
           `Failed to send block chunk: ${blockData.error} — ${JSON.stringify(blockData.response_metadata || {})}`,
         );
       } else {
-        core.info("Block Kit message sent successfully");
+        core.info(
+          `Block Kit message sent successfully. thread_ts=${messageTimestamp}, channel=${slackChannelId}, response_ts=${blockData.ts}`,
+        );
       }
     }
   } else {
