@@ -29406,6 +29406,21 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
         pull_number: prNumber,
         body: newPrBody,
     });
+    // Debug: send a plain text thread reply to verify threading works
+    const debugReply = await fetch("https://slack.com/api/chat.postMessage", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${slackToken}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            channel: slackChannelId,
+            text: `Debug: thread reply test. thread_ts=${messageTimestamp}`,
+            thread_ts: messageTimestamp,
+        }),
+    });
+    const debugData = await debugReply.json();
+    core.info(`Debug thread reply: ok=${debugData.ok}, error=${debugData.error || "none"}, ts=${debugData.ts || "none"}`);
     // Fetch all commits for the pull request
     const { owner, repo } = github.context.repo;
     const allCommits = await (0, fetchAllCommits_1.fetchAllCommits)(owner, repo, prNumber, githubToken);

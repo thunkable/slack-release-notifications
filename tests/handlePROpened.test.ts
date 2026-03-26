@@ -476,7 +476,11 @@ describe("handlePROpened", () => {
     const fetchCalls = (global.fetch as jest.Mock).mock.calls;
     const commitListCall = fetchCalls.find((call: [string, RequestInit]) => {
       const body = JSON.parse(call[1].body as string);
-      return body.thread_ts === "12345" && body.text;
+      return (
+        body.thread_ts === "12345" &&
+        body.text &&
+        !body.text.startsWith("Debug:")
+      );
     });
     expect(commitListCall).toBeDefined();
     const body = JSON.parse(commitListCall![1].body as string);
