@@ -29432,30 +29432,42 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
         const categorizedCommits = categorizeCommits(commitsData, owner, repo, githubToSlackMap);
         // Build Block Kit blocks
         const blocks = (0, buildSlackBlocks_1.buildSortedCommitBlocks)(categorizedCommits, changelogUrl, branchName, targetBranch);
-        // Chunk blocks to respect Slack's 50-block limit
+        // Chunk blocks to respect Slack's limits (50 blocks and ~35KB payload per message)
         const blockChunks = (0, buildSlackBlocks_1.chunkBlocks)(blocks);
+        core.info(`Total blocks: ${blocks.length}, chunks: ${blockChunks.length}`);
+        for (let ci = 0; ci < blockChunks.length; ci++) {
+            const payloadSize = JSON.stringify(blockChunks[ci]).length;
+            core.info(`Chunk ${ci + 1}/${blockChunks.length}: ${blockChunks[ci].length} blocks, ${payloadSize} bytes`);
+        }
         // Build a plain-text fallback for notifications
         const fallbackText = Object.keys(categorizedCommits)
             .sort()
             .map((scope) => `${scope.charAt(0).toUpperCase() + scope.slice(1)}: ${Object.values(categorizedCommits[scope]).flat().length} commits`)
             .join(", ");
-        for (const chunk of blockChunks) {
+        for (let ci = 0; ci < blockChunks.length; ci++) {
+            const chunk = blockChunks[ci];
+            const payload = JSON.stringify({
+                channel: slackChannelId,
+                text: fallbackText,
+                blocks: chunk,
+                thread_ts: messageTimestamp,
+            });
+            core.info(`Sending chunk ${ci + 1}/${blockChunks.length}, payload size: ${payload.length} bytes`);
             const blockResponse = await fetch("https://slack.com/api/chat.postMessage", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${slackToken}`,
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                    channel: slackChannelId,
-                    text: fallbackText,
-                    blocks: chunk,
-                    thread_ts: messageTimestamp,
-                }),
+                body: payload,
             });
             const blockData = await blockResponse.json();
             if (!blockData.ok) {
-                core.error(`Failed to send block chunk: ${blockData.error}`);
+                core.error(`Failed to send block chunk ${ci + 1}: ${blockData.error}`);
+                core.error(`Response: ${JSON.stringify(blockData)}`);
+            }
+            else {
+                core.info(`Chunk ${ci + 1} sent successfully, ts: ${blockData.ts}`);
             }
         }
     }
