@@ -104,7 +104,7 @@ describe("filterMergeCommits", () => {
 });
 
 describe("categorizeCommits", () => {
-  it("places multi-scope commit under first scope only with 'also' indicator", () => {
+  it("places multi-scope commit under first scope only", () => {
     const commits: Commit[] = [
       {
         sha: "abc123",
@@ -120,14 +120,10 @@ describe("categorizeCommits", () => {
     // Only first scope gets the commit
     expect(Object.keys(result)).toEqual(["companion"]);
     expect(result["companion"]["chore"]).toHaveLength(1);
-    // Should have "also" indicator for other scopes
-    expect(result["companion"]["chore"][0].text).toContain(
-      "_(also: bs, frontend)_",
-    );
     expect(result["companion"]["chore"][0].author).toBe("dev");
   });
 
-  it("places multi-scope commit (no spaces) under first scope with 'also' indicator", () => {
+  it("places multi-scope commit (no spaces) under first scope only", () => {
     const commits: Commit[] = [
       {
         sha: "abc123",
@@ -142,7 +138,6 @@ describe("categorizeCommits", () => {
     const result = categorizeCommits(commits, "owner", "repo");
     expect(Object.keys(result)).toEqual(["backend"]);
     expect(result["backend"]["fix"]).toHaveLength(1);
-    expect(result["backend"]["fix"][0].text).toContain("_(also: frontend)_");
   });
 
   it('puts scopeless commits under "other"', () => {
@@ -179,7 +174,7 @@ describe("categorizeCommits", () => {
     expect(result["backend"]["fix"][0].text).toContain("<@U12345>");
   });
 
-  it("does not add 'also' indicator for single-scope commits", () => {
+  it("places single-scope commit under its scope", () => {
     const commits: Commit[] = [
       {
         sha: "abc123",
@@ -192,7 +187,8 @@ describe("categorizeCommits", () => {
     ];
 
     const result = categorizeCommits(commits, "owner", "repo");
-    expect(result["backend"]["fix"][0].text).not.toContain("also:");
+    expect(Object.keys(result)).toEqual(["backend"]);
+    expect(result["backend"]["fix"]).toHaveLength(1);
   });
 
   it("stores author for sorting", () => {
@@ -642,13 +638,5 @@ describe("handlePROpened", () => {
     );
     expect(headerBlocks).toHaveLength(1);
     expect(headerBlocks[0].text.text).toBe("Companion");
-
-    // The section should contain the "also" indicator
-    const sectionBlocks = body.blocks.filter(
-      (b: { type: string; text?: { text: string } }) =>
-        b.type === "section" && b.text?.text.includes("also:"),
-    );
-    expect(sectionBlocks).toHaveLength(1);
-    expect(sectionBlocks[0].text.text).toContain("_(also: bs, frontend)_");
   });
 });

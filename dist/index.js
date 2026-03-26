@@ -29339,11 +29339,7 @@ function categorizeCommits(commits, owner, repo, githubToSlackMap) {
         const type = commitMessage.split("(")[0].trim();
         // Place under first (primary) scope only
         const primaryScope = scopes[0];
-        const otherScopes = scopes.slice(1);
-        let entryText = `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
-        if (otherScopes.length > 0) {
-            entryText += `  _(also: ${otherScopes.join(", ")})_`;
-        }
+        const entryText = `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
         if (!acc[primaryScope]) {
             acc[primaryScope] = {};
         }
