@@ -1,3 +1,14 @@
+import { Commit } from "./utils/fetchAllCommits";
+/**
+ * Filters out merge commits that add no value to release notes.
+ */
+export declare function filterMergeCommits(commits: Commit[]): Commit[];
+/**
+ * Categorizes commits by scope and type for sorted display.
+ */
+export declare function categorizeCommits(commits: Commit[], owner: string, repo: string, githubToSlackMap?: Record<string, string>): Record<string, {
+    [type: string]: string[];
+}>;
 /**
  * Handles the event when a pull request is opened.
  * @param slackToken - Slack bot token.
