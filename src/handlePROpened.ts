@@ -208,19 +208,30 @@ export async function handlePROpened(
     );
 
     for (const chunk of blockChunks) {
-      await fetch("https://slack.com/api/chat.postMessage", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${slackToken}`,
-          "Content-Type": "application/json",
+      const blockResponse = await fetch(
+        "https://slack.com/api/chat.postMessage",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${slackToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            channel: slackChannelId,
+            text: fallbackText,
+            blocks: chunk,
+            thread_ts: messageTimestamp,
+          }),
         },
-        body: JSON.stringify({
-          channel: slackChannelId,
-          text: fallbackText,
-          blocks: chunk,
-          thread_ts: messageTimestamp,
-        }),
-      });
+      );
+      const blockData = await blockResponse.json();
+      if (!blockData.ok) {
+        core.error(
+          `Failed to send block chunk: ${blockData.error} — ${JSON.stringify(blockData.response_metadata || {})}`,
+        );
+      } else {
+        core.info("Block Kit message sent successfully");
+      }
     }
   } else {
     const commitMessages = commitsData

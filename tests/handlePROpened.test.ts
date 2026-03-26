@@ -12,10 +12,10 @@ jest.mock("../src/utils/fetchAllCommits");
 // Mock fetch globally
 global.fetch = jest.fn(async (url) => {
   if (url === "https://slack.com/api/chat.postMessage") {
-    return {
-      ok: true,
-      json: async () => ({ ok: true, ts: "12345" }),
-    } as Response;
+    return new Response(JSON.stringify({ ok: true, ts: "12345" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   }
   throw new Error("Unexpected URL");
 }) as jest.Mock;
@@ -450,10 +450,13 @@ describe("handlePROpened", () => {
     ];
     (fetchAllCommits as jest.Mock).mockResolvedValue(commitsWithMerge);
 
-    const initialSlackResponse = { ok: true, ts: "12345" };
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(new Response(JSON.stringify(initialSlackResponse)));
+    global.fetch = jest.fn().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ ok: true, ts: "12345" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
 
     const octokitMock = {
       rest: { pulls: { update: jest.fn() } },
@@ -494,10 +497,13 @@ describe("handlePROpened", () => {
     ];
     (fetchAllCommits as jest.Mock).mockResolvedValue(onlyMergeCommits);
 
-    const initialSlackResponse = { ok: true, ts: "12345" };
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(new Response(JSON.stringify(initialSlackResponse)));
+    global.fetch = jest.fn().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ ok: true, ts: "12345" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
 
     const octokitMock = {
       rest: { pulls: { update: jest.fn() } },
@@ -546,10 +552,13 @@ describe("handlePROpened", () => {
     ];
     (fetchAllCommits as jest.Mock).mockResolvedValue(sortedCommits);
 
-    const initialSlackResponse = { ok: true, ts: "12345" };
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(new Response(JSON.stringify(initialSlackResponse)));
+    global.fetch = jest.fn().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ ok: true, ts: "12345" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
 
     const octokitMock = {
       rest: { pulls: { update: jest.fn() } },
@@ -603,10 +612,13 @@ describe("handlePROpened", () => {
     ];
     (fetchAllCommits as jest.Mock).mockResolvedValue(multiScopeCommits);
 
-    const initialSlackResponse = { ok: true, ts: "12345" };
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(new Response(JSON.stringify(initialSlackResponse)));
+    global.fetch = jest.fn().mockImplementation(
+      async () =>
+        new Response(JSON.stringify({ ok: true, ts: "12345" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+    );
 
     const octokitMock = {
       rest: { pulls: { update: jest.fn() } },

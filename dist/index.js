@@ -29444,7 +29444,7 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
             .join(", ");
         core.info(`Built ${blocks.length} blocks in ${blockChunks.length} chunk(s). Scopes: ${Object.keys(categorizedCommits).sort().join(", ")}`);
         for (const chunk of blockChunks) {
-            await fetch("https://slack.com/api/chat.postMessage", {
+            const blockResponse = await fetch("https://slack.com/api/chat.postMessage", {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${slackToken}`,
@@ -29457,6 +29457,13 @@ async function handlePROpened(slackToken, slackChannelId, githubToken, initialMe
                     thread_ts: messageTimestamp,
                 }),
             });
+            const blockData = await blockResponse.json();
+            if (!blockData.ok) {
+                core.error(`Failed to send block chunk: ${blockData.error} — ${JSON.stringify(blockData.response_metadata || {})}`);
+            }
+            else {
+                core.info("Block Kit message sent successfully");
+            }
         }
     }
     else {
