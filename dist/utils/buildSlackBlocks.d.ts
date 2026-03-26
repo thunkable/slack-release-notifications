@@ -18,7 +18,8 @@ export declare function buildSortedCommitBlocks(categorizedCommits: Record<strin
     [type: string]: CommitEntry[];
 }>, changelogUrl: string, branchName: string, targetBranch: string): SlackBlock[];
 /**
- * Splits a blocks array into chunks that respect Slack's 50-block-per-message limit.
- * Uses a limit of 48 to leave room for any wrapper blocks Slack may add.
+ * Splits a blocks array into chunks that respect both Slack's 50-block-per-message
+ * limit and the ~40KB JSON payload limit. Prefers splitting on divider boundaries
+ * so scopes stay together.
  */
-export declare function chunkBlocks(blocks: SlackBlock[], maxBlocks?: number): SlackBlock[][];
+export declare function chunkBlocks(blocks: SlackBlock[], maxBlocks?: number, maxPayloadBytes?: number): SlackBlock[][];
