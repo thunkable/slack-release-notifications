@@ -15,15 +15,23 @@ export function filterMergeCommits(commits: Commit[]): Commit[] {
   });
 }
 
+export interface CommitEntry {
+  text: string;
+  author: string;
+}
+
 /**
  * Categorizes commits by scope and type for sorted display.
+ * Each commit is placed under its first (primary) scope only.
+ * Multi-scope commits get an "also: X, Y" indicator.
+ * Author is stored separately for sorting.
  */
 export function categorizeCommits(
   commits: Commit[],
   owner: string,
   repo: string,
   githubToSlackMap?: Record<string, string>,
-): Record<string, { [type: string]: string[] }> {
+): Record<string, { [type: string]: CommitEntry[] }> {
   return commits.reduce(
     (acc, commit) => {
       const commitMessage = commit.commit.message.split("\n")[0];
@@ -34,26 +42,33 @@ export function categorizeCommits(
         ? githubToSlackMap[githubUser]
         : null;
       const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
-      const commitEntry = `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
 
       const scopeMatch = commitMessage.match(/^\w+\(([\w,\s]+)\):/);
-      const scopes = scopeMatch ? scopeMatch[1].split(",") : ["other"];
+      const scopes = scopeMatch
+        ? scopeMatch[1].split(",").map((s) => s.trim())
+        : ["other"];
       const type = commitMessage.split("(")[0].trim();
 
-      scopes.forEach((scope) => {
-        const key = scope.trim();
-        if (!acc[key]) {
-          acc[key] = {};
-        }
-        if (!acc[key][type]) {
-          acc[key][type] = [];
-        }
-        acc[key][type].push(commitEntry);
-      });
+      // Place under first (primary) scope only
+      const primaryScope = scopes[0];
+      const otherScopes = scopes.slice(1);
+
+      let entryText = `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+      if (otherScopes.length > 0) {
+        entryText += `  _(also: ${otherScopes.join(", ")})_`;
+      }
+
+      if (!acc[primaryScope]) {
+        acc[primaryScope] = {};
+      }
+      if (!acc[primaryScope][type]) {
+        acc[primaryScope][type] = [];
+      }
+      acc[primaryScope][type].push({ text: entryText, author: githubUser });
 
       return acc;
     },
-    {} as Record<string, { [type: string]: string[] }>,
+    {} as Record<string, { [type: string]: CommitEntry[] }>,
   );
 }
 

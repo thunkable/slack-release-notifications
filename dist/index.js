@@ -29318,6 +29318,9 @@ function filterMergeCommits(commits) {
 exports.filterMergeCommits = filterMergeCommits;
 /**
  * Categorizes commits by scope and type for sorted display.
+ * Each commit is placed under its first (primary) scope only.
+ * Multi-scope commits get an "also: X, Y" indicator.
+ * Author is stored separately for sorting.
  */
 function categorizeCommits(commits, owner, repo, githubToSlackMap) {
     return commits.reduce((acc, commit) => {
@@ -29329,20 +29332,25 @@ function categorizeCommits(commits, owner, repo, githubToSlackMap) {
             ? githubToSlackMap[githubUser]
             : null;
         const userDisplay = slackUserId ? `<@${slackUserId}>` : `@${githubUser}`;
-        const commitEntry = `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
         const scopeMatch = commitMessage.match(/^\w+\(([\w,\s]+)\):/);
-        const scopes = scopeMatch ? scopeMatch[1].split(",") : ["other"];
+        const scopes = scopeMatch
+            ? scopeMatch[1].split(",").map((s) => s.trim())
+            : ["other"];
         const type = commitMessage.split("(")[0].trim();
-        scopes.forEach((scope) => {
-            const key = scope.trim();
-            if (!acc[key]) {
-                acc[key] = {};
-            }
-            if (!acc[key][type]) {
-                acc[key][type] = [];
-            }
-            acc[key][type].push(commitEntry);
-        });
+        // Place under first (primary) scope only
+        const primaryScope = scopes[0];
+        const otherScopes = scopes.slice(1);
+        let entryText = `• <${commitUrl}|${commitMessage}> by ${userDisplay}`;
+        if (otherScopes.length > 0) {
+            entryText += `  _(also: ${otherScopes.join(", ")})_`;
+        }
+        if (!acc[primaryScope]) {
+            acc[primaryScope] = {};
+        }
+        if (!acc[primaryScope][type]) {
+            acc[primaryScope][type] = [];
+        }
+        acc[primaryScope][type].push({ text: entryText, author: githubUser });
         return acc;
     }, {});
 }
@@ -29711,6 +29719,8 @@ exports.chunkBlocks = exports.buildSortedCommitBlocks = void 0;
 /**
  * Builds Slack Block Kit blocks from categorized commits.
  * Each scope gets a header, followed by sections grouped by commit type.
+ * Within each type, commits are sorted by author so the same person's
+ * commits appear together.
  * A divider separates scopes, and a changelog link is appended at the end.
  */
 function buildSortedCommitBlocks(categorizedCommits, changelogUrl, branchName, targetBranch) {
@@ -29733,8 +29743,10 @@ function buildSortedCommitBlocks(categorizedCommits, changelogUrl, branchName, t
         const lines = [];
         for (const type of sortedTypes) {
             lines.push(`*${type}*`);
-            for (const entry of types[type].sort()) {
-                lines.push(entry);
+            // Sort by author so same person's commits are grouped together
+            const sorted = [...types[type]].sort((a, b) => a.author.localeCompare(b.author));
+            for (const entry of sorted) {
+                lines.push(entry.text);
             }
         }
         blocks.push({

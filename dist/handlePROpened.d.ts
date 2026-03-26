@@ -3,11 +3,18 @@ import { Commit } from "./utils/fetchAllCommits";
  * Filters out merge commits that add no value to release notes.
  */
 export declare function filterMergeCommits(commits: Commit[]): Commit[];
+export interface CommitEntry {
+    text: string;
+    author: string;
+}
 /**
  * Categorizes commits by scope and type for sorted display.
+ * Each commit is placed under its first (primary) scope only.
+ * Multi-scope commits get an "also: X, Y" indicator.
+ * Author is stored separately for sorting.
  */
 export declare function categorizeCommits(commits: Commit[], owner: string, repo: string, githubToSlackMap?: Record<string, string>): Record<string, {
-    [type: string]: string[];
+    [type: string]: CommitEntry[];
 }>;
 /**
  * Handles the event when a pull request is opened.

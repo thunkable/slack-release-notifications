@@ -1,3 +1,5 @@
+import { CommitEntry } from "../handlePROpened";
+
 export interface SlackBlock {
   type: string;
   text?: {
@@ -10,10 +12,12 @@ export interface SlackBlock {
 /**
  * Builds Slack Block Kit blocks from categorized commits.
  * Each scope gets a header, followed by sections grouped by commit type.
+ * Within each type, commits are sorted by author so the same person's
+ * commits appear together.
  * A divider separates scopes, and a changelog link is appended at the end.
  */
 export function buildSortedCommitBlocks(
-  categorizedCommits: Record<string, { [type: string]: string[] }>,
+  categorizedCommits: Record<string, { [type: string]: CommitEntry[] }>,
   changelogUrl: string,
   branchName: string,
   targetBranch: string,
@@ -40,8 +44,12 @@ export function buildSortedCommitBlocks(
     const lines: string[] = [];
     for (const type of sortedTypes) {
       lines.push(`*${type}*`);
-      for (const entry of types[type].sort()) {
-        lines.push(entry);
+      // Sort by author so same person's commits are grouped together
+      const sorted = [...types[type]].sort((a, b) =>
+        a.author.localeCompare(b.author),
+      );
+      for (const entry of sorted) {
+        lines.push(entry.text);
       }
     }
 

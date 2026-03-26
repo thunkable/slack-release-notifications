@@ -104,7 +104,7 @@ describe("filterMergeCommits", () => {
 });
 
 describe("categorizeCommits", () => {
-  it("categorizes multi-scope commits with spaces into all scopes", () => {
+  it("places multi-scope commit under first scope only with 'also' indicator", () => {
     const commits: Commit[] = [
       {
         sha: "abc123",
@@ -117,14 +117,17 @@ describe("categorizeCommits", () => {
     ];
 
     const result = categorizeCommits(commits, "owner", "repo");
-    expect(Object.keys(result).sort()).toEqual(["bs", "companion", "frontend"]);
-    // Each scope should have the commit
+    // Only first scope gets the commit
+    expect(Object.keys(result)).toEqual(["companion"]);
     expect(result["companion"]["chore"]).toHaveLength(1);
-    expect(result["bs"]["chore"]).toHaveLength(1);
-    expect(result["frontend"]["chore"]).toHaveLength(1);
+    // Should have "also" indicator for other scopes
+    expect(result["companion"]["chore"][0].text).toContain(
+      "_(also: bs, frontend)_",
+    );
+    expect(result["companion"]["chore"][0].author).toBe("dev");
   });
 
-  it("categorizes multi-scope commits without spaces", () => {
+  it("places multi-scope commit (no spaces) under first scope with 'also' indicator", () => {
     const commits: Commit[] = [
       {
         sha: "abc123",
@@ -137,9 +140,9 @@ describe("categorizeCommits", () => {
     ];
 
     const result = categorizeCommits(commits, "owner", "repo");
-    expect(Object.keys(result).sort()).toEqual(["backend", "frontend"]);
+    expect(Object.keys(result)).toEqual(["backend"]);
     expect(result["backend"]["fix"]).toHaveLength(1);
-    expect(result["frontend"]["fix"]).toHaveLength(1);
+    expect(result["backend"]["fix"][0].text).toContain("_(also: frontend)_");
   });
 
   it('puts scopeless commits under "other"', () => {
@@ -173,7 +176,48 @@ describe("categorizeCommits", () => {
     const result = categorizeCommits(commits, "owner", "repo", {
       githubUser: "U12345",
     });
-    expect(result["backend"]["fix"][0]).toContain("<@U12345>");
+    expect(result["backend"]["fix"][0].text).toContain("<@U12345>");
+  });
+
+  it("does not add 'also' indicator for single-scope commits", () => {
+    const commits: Commit[] = [
+      {
+        sha: "abc123",
+        commit: {
+          message: "fix(backend): Fix auth",
+          author: { name: "dev" },
+        },
+        author: { login: "dev" },
+      },
+    ];
+
+    const result = categorizeCommits(commits, "owner", "repo");
+    expect(result["backend"]["fix"][0].text).not.toContain("also:");
+  });
+
+  it("stores author for sorting", () => {
+    const commits: Commit[] = [
+      {
+        sha: "abc1",
+        commit: {
+          message: "fix(backend): Fix A",
+          author: { name: "zara" },
+        },
+        author: { login: "zara" },
+      },
+      {
+        sha: "abc2",
+        commit: {
+          message: "fix(backend): Fix B",
+          author: { name: "alice" },
+        },
+        author: { login: "alice" },
+      },
+    ];
+
+    const result = categorizeCommits(commits, "owner", "repo");
+    expect(result["backend"]["fix"][0].author).toBe("zara");
+    expect(result["backend"]["fix"][1].author).toBe("alice");
   });
 });
 
@@ -592,13 +636,19 @@ describe("handlePROpened", () => {
     expect(blockKitCall).toBeDefined();
     const body = JSON.parse(blockKitCall![1].body as string);
 
-    // Should have headers for all 3 scopes: bs, companion, frontend
+    // Should have header only for primary scope: companion (first listed)
     const headerBlocks = body.blocks.filter(
       (b: { type: string }) => b.type === "header",
     );
-    const scopeNames = headerBlocks.map(
-      (b: { text: { text: string } }) => b.text.text,
+    expect(headerBlocks).toHaveLength(1);
+    expect(headerBlocks[0].text.text).toBe("Companion");
+
+    // The section should contain the "also" indicator
+    const sectionBlocks = body.blocks.filter(
+      (b: { type: string; text?: { text: string } }) =>
+        b.type === "section" && b.text?.text.includes("also:"),
     );
-    expect(scopeNames).toEqual(["Bs", "Companion", "Frontend"]);
+    expect(sectionBlocks).toHaveLength(1);
+    expect(sectionBlocks[0].text.text).toContain("_(also: bs, frontend)_");
   });
 });

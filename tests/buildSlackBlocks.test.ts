@@ -3,6 +3,12 @@ import {
   chunkBlocks,
   SlackBlock,
 } from "../src/utils/buildSlackBlocks";
+import { CommitEntry } from "../src/handlePROpened";
+
+const entry = (text: string, author: string): CommitEntry => ({
+  text,
+  author,
+});
 
 describe("buildSortedCommitBlocks", () => {
   const changelogUrl = "https://github.com/owner/repo/compare/main...release";
@@ -12,10 +18,10 @@ describe("buildSortedCommitBlocks", () => {
   it("builds blocks with scopes sorted alphabetically", () => {
     const categorized = {
       frontend: {
-        fix: ["• fix(frontend): Fix button by @user"],
+        fix: [entry("• fix(frontend): Fix button by @user", "user")],
       },
       backend: {
-        chore: ["• chore(backend): Update deps by @user"],
+        chore: [entry("• chore(backend): Update deps by @user", "user")],
       },
     };
 
@@ -68,9 +74,9 @@ describe("buildSortedCommitBlocks", () => {
   it("sorts types within a scope alphabetically", () => {
     const categorized = {
       backend: {
-        fix: ["• fix(backend): Fix auth by @user"],
-        chore: ["• chore(backend): Update deps by @user"],
-        feat: ["• feat(backend): Add endpoint by @user"],
+        fix: [entry("• fix(backend): Fix auth by @user", "user")],
+        chore: [entry("• chore(backend): Update deps by @user", "user")],
+        feat: [entry("• feat(backend): Add endpoint by @user", "user")],
       },
     };
 
@@ -91,10 +97,67 @@ describe("buildSortedCommitBlocks", () => {
     expect(typeOrder).toEqual(["chore", "feat", "fix"]);
   });
 
+  it("sorts commits by author within each type", () => {
+    const categorized = {
+      backend: {
+        fix: [
+          entry("• fix: C commit by @zara", "zara"),
+          entry("• fix: A commit by @alice", "alice"),
+          entry("• fix: B commit by @bob", "bob"),
+        ],
+      },
+    };
+
+    const blocks = buildSortedCommitBlocks(
+      categorized,
+      changelogUrl,
+      branchName,
+      targetBranch,
+    );
+
+    const sectionText = blocks[1].text!.text;
+    const commitLines = sectionText
+      .split("\n")
+      .filter((l: string) => l.startsWith("•"));
+    expect(commitLines[0]).toContain("@alice");
+    expect(commitLines[1]).toContain("@bob");
+    expect(commitLines[2]).toContain("@zara");
+  });
+
+  it("groups same author's commits together", () => {
+    const categorized = {
+      frontend: {
+        fix: [
+          entry("• fix: First by @bob", "bob"),
+          entry("• fix: Second by @alice", "alice"),
+          entry("• fix: Third by @alice", "alice"),
+          entry("• fix: Fourth by @bob", "bob"),
+        ],
+      },
+    };
+
+    const blocks = buildSortedCommitBlocks(
+      categorized,
+      changelogUrl,
+      branchName,
+      targetBranch,
+    );
+
+    const sectionText = blocks[1].text!.text;
+    const commitLines = sectionText
+      .split("\n")
+      .filter((l: string) => l.startsWith("•"));
+    // alice's commits first, then bob's
+    expect(commitLines[0]).toContain("@alice");
+    expect(commitLines[1]).toContain("@alice");
+    expect(commitLines[2]).toContain("@bob");
+    expect(commitLines[3]).toContain("@bob");
+  });
+
   it("handles a single scope without inter-scope divider", () => {
     const categorized = {
       other: {
-        chore: ["• chore: Misc task by @user"],
+        chore: [entry("• chore: Misc task by @user", "user")],
       },
     };
 
