@@ -29320,7 +29320,6 @@ exports.filterMergeCommits = filterMergeCommits;
 /**
  * Categorizes commits by scope and type for sorted display.
  * Each commit is placed under its first (primary) scope only.
- * Multi-scope commits get an "also: X, Y" indicator.
  * Author is stored separately for sorting.
  */
 function categorizeCommits(commits, owner, repo, githubToSlackMap) {

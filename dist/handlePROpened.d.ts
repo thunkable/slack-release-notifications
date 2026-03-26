@@ -10,7 +10,6 @@ export interface CommitEntry {
 /**
  * Categorizes commits by scope and type for sorted display.
  * Each commit is placed under its first (primary) scope only.
- * Multi-scope commits get an "also: X, Y" indicator.
  * Author is stored separately for sorting.
  */
 export declare function categorizeCommits(commits: Commit[], owner: string, repo: string, githubToSlackMap?: Record<string, string>): Record<string, {
