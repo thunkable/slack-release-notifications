@@ -29738,24 +29738,40 @@ function buildSortedCommitBlocks(categorizedCommits, changelogUrl, branchName, t
                 emoji: true,
             },
         });
-        // Section per type group, sorted alphabetically
+        // Section per type group, sorted alphabetically.
+        // Slack section blocks have a 3000-char text limit, so we split into
+        // multiple sections when the content is too long.
+        const MAX_SECTION_LENGTH = 2900;
         const sortedTypes = Object.keys(types).sort();
         const lines = [];
         for (const type of sortedTypes) {
             lines.push(`*${type}*`);
-            // Sort by author so same person's commits are grouped together
             const sorted = [...types[type]].sort((a, b) => a.author.localeCompare(b.author));
             for (const entry of sorted) {
                 lines.push(entry.text);
             }
         }
-        blocks.push({
-            type: "section",
-            text: {
-                type: "mrkdwn",
-                text: lines.join("\n"),
-            },
-        });
+        // Split lines into sections that fit within Slack's limit
+        let currentText = "";
+        for (const line of lines) {
+            const candidate = currentText ? currentText + "\n" + line : line;
+            if (candidate.length > MAX_SECTION_LENGTH && currentText) {
+                blocks.push({
+                    type: "section",
+                    text: { type: "mrkdwn", text: currentText },
+                });
+                currentText = line;
+            }
+            else {
+                currentText = candidate;
+            }
+        }
+        if (currentText) {
+            blocks.push({
+                type: "section",
+                text: { type: "mrkdwn", text: currentText },
+            });
+        }
         // Divider between scopes
         if (i < sortedScopes.length - 1) {
             blocks.push({ type: "divider" });

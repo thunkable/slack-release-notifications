@@ -154,6 +154,44 @@ describe("buildSortedCommitBlocks", () => {
     expect(commitLines[3]).toContain("@bob");
   });
 
+  it("splits large scopes into multiple section blocks under 3000 chars", () => {
+    // Generate enough commits to exceed the 2900-char section limit
+    const longEntries: CommitEntry[] = Array.from({ length: 30 }, (_, i) =>
+      entry(
+        `• fix(backend): Fix issue number ${i} with a reasonably long commit message to inflate size <https://github.com/owner/repo/commit/abc${i}|link> by @developer${i}`,
+        `developer${i}`,
+      ),
+    );
+
+    const categorized = {
+      backend: { fix: longEntries },
+    };
+
+    const blocks = buildSortedCommitBlocks(
+      categorized,
+      changelogUrl,
+      branchName,
+      targetBranch,
+    );
+
+    // Should have: header + multiple sections + divider + changelog
+    const sectionBlocks = blocks.filter(
+      (b) => b.type === "section" && !b.text?.text.includes("Full Changelog"),
+    );
+    expect(sectionBlocks.length).toBeGreaterThan(1);
+
+    // Each section should be under 3000 chars
+    for (const section of sectionBlocks) {
+      expect(section.text!.text.length).toBeLessThanOrEqual(3000);
+    }
+
+    // All commits should still be present across all sections
+    const allText = sectionBlocks.map((b) => b.text!.text).join("\n");
+    for (let i = 0; i < 30; i++) {
+      expect(allText).toContain(`Fix issue number ${i}`);
+    }
+  });
+
   it("handles a single scope without inter-scope divider", () => {
     const categorized = {
       other: {
