@@ -247,7 +247,6 @@ describe("chunkBlocks", () => {
 
   it("handles empty blocks array", () => {
     const chunks = chunkBlocks([], 48);
-    expect(chunks).toHaveLength(1);
-    expect(chunks[0]).toEqual([]);
+    expect(chunks).toHaveLength(0);
   });
 });

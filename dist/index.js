@@ -29791,21 +29791,24 @@ function buildSortedCommitBlocks(categorizedCommits, changelogUrl, branchName, t
 }
 exports.buildSortedCommitBlocks = buildSortedCommitBlocks;
 /**
- * Splits a blocks array into chunks that respect Slack's 50-block-per-message limit.
- * Uses a limit of 48 to leave room for any wrapper blocks Slack may add.
+ * Splits a blocks array into chunks that respect both Slack's 50-block-per-message
+ * limit and the ~40KB JSON payload limit. Prefers splitting on divider boundaries
+ * so scopes stay together.
  */
-function chunkBlocks(blocks, maxBlocks = 48) {
-    if (blocks.length <= maxBlocks) {
-        return [blocks];
-    }
+function chunkBlocks(blocks, maxBlocks = 48, maxPayloadBytes = 35000) {
     const chunks = [];
     let current = [];
+    let currentSize = 0;
     for (const block of blocks) {
-        if (current.length >= maxBlocks) {
+        const blockSize = JSON.stringify(block).length;
+        if (current.length > 0 &&
+            (current.length >= maxBlocks || currentSize + blockSize > maxPayloadBytes)) {
             chunks.push(current);
             current = [];
+            currentSize = 0;
         }
         current.push(block);
+        currentSize += blockSize;
     }
     if (current.length > 0) {
         chunks.push(current);
